@@ -1,5 +1,4 @@
-import anchor from "@coral-xyz/anchor";
-import pkg from "@solana/web3.js";
+import { anchor, web3 as pkg } from "./_anchor.ts";
 import { expect } from "chai";
 import { Platform } from "@x1-labs/games-sdk";
 import { appRouter, createCallerFactory } from "@x1-labs/games-services";

@@ -1,5 +1,5 @@
-import anchor from "@coral-xyz/anchor";
-import pkg from "@solana/web3.js";
+// eslint-disable-next-line @typescript-eslint/no-explicit-any
+import { anchor, web3 as pkg } from "./_anchor.ts";
 import { expect } from "chai";
 
 const { BN } = anchor;

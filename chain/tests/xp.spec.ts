@@ -1,5 +1,4 @@
-import anchor from "@coral-xyz/anchor";
-import pkg from "@solana/web3.js";
+import { anchor, web3 as pkg } from "./_anchor.ts";
 import { expect } from "chai";
 
 const { BN } = anchor;
