@@ -91,8 +91,17 @@ jobs:
           avm install ${ANCHOR_VERSION}
           avm use ${ANCHOR_VERSION}
 
-      - name: Install surfpool
-        run: cargo install --git https://github.com/txtx/surfpool --tag v${SURFPOOL_VERSION} surfpool
+      - name: Install surfpool (from release binary)
+        run: |
+          set -euo pipefail
+          # The project moved from txtx/surfpool to solana-foundation/surfpool;
+          # we pull the pinned linux-x64 release tarball straight from there.
+          url="https://github.com/solana-foundation/surfpool/releases/download/v${SURFPOOL_VERSION}/surfpool-linux-x64.tar.gz"
+          tmp="$(mktemp -d)"
+          curl -sSfL "$url" -o "$tmp/surfpool.tar.gz"
+          tar -xzf "$tmp/surfpool.tar.gz" -C "$tmp"
+          install -m 0755 "$tmp/surfpool" "$HOME/.cargo/bin/surfpool"
+          rm -rf "$tmp"
 
       - name: Verify toolchain
         run: |
