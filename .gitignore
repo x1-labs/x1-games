@@ -12,6 +12,9 @@ out/
 
 # Anchor / Solana
 chain/target/
+!chain/target/deploy/
+chain/target/deploy/*
+!chain/target/deploy/*-keypair.json
 chain/.anchor/
 chain/test-ledger/
 **/*.so
