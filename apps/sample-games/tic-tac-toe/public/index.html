@@ -77,11 +77,12 @@
         cursor: pointer;
         display: flex; align-items: center; justify-content: center;
       }
-      .cell:hover:not(.taken):not(.terminal) { border-color: var(--accent); }
+      .grid:not(.terminal):not(.not-your-turn) .cell:not(.taken):hover { border-color: var(--accent); }
       .cell.taken { cursor: default; }
       .cell.x { color: var(--accent); }
       .cell.o { color: var(--lose); }
-      .terminal .cell { cursor: default; }
+      .terminal .cell, .not-your-turn .cell { cursor: default; }
+      .not-your-turn .cell:not(.taken) { opacity: 0.5; }
       .status { text-align: center; font-size: 16px; margin: 8px 0; }
       .status.win { color: var(--win); }
       .status.draw { color: var(--muted); }

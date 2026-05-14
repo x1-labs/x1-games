@@ -293,7 +293,24 @@ function connectWS(matchId: string): void {
   lobbyPanel.hidden = true;
   matchPanel.hidden = false;
   matchIdEl.textContent = matchId;
+  statusEl.className = "status";
+  statusEl.textContent = "waiting for opponent · share the matchId above";
   buildGrid();
+  // Add a copy-matchId affordance once.
+  if (!document.getElementById("copy-match")) {
+    const btn = document.createElement("button");
+    btn.id = "copy-match";
+    btn.textContent = "copy matchId";
+    btn.style.marginLeft = "8px";
+    btn.addEventListener("click", () => {
+      navigator.clipboard.writeText(matchId).then(() => {
+        btn.textContent = "copied ✓";
+        setTimeout(() => (btn.textContent = "copy matchId"), 1500);
+      });
+    });
+    matchIdEl.parentElement?.appendChild(btn);
+  }
+  let hasSession = false;
 
   const ws = new WebSocket(WS_URL);
   ws.addEventListener("open", () => log("ws open · waiting for challenge"));
@@ -326,12 +343,18 @@ function connectWS(matchId: string): void {
       );
       return;
     }
-    if (msg.type === "state") render(msg as unknown as StateMsg);
-    else if (msg.type === "settled") {
+    if (msg.type === "state") {
+      hasSession = true;
+      render(msg as unknown as StateMsg);
+    } else if (msg.type === "settled") {
       log(`settled · winner=${msg.winner ? abbrev(msg.winner) : "draw"}`);
       refreshBalance();
-    } else if (msg.type === "info") log(`server: ${msg.message}`);
-    else if (msg.type === "error") log(`server error: ${msg.message}`);
+    } else if (msg.type === "info") {
+      log(`server: ${msg.message}`);
+      if (!hasSession) {
+        statusEl.textContent = "waiting for opponent · share the matchId above";
+      }
+    } else if (msg.type === "error") log(`server error: ${msg.message}`);
   });
 
   function move(cell: number): void {
@@ -345,7 +368,10 @@ function connectWS(matchId: string): void {
       c.className = "cell";
       c.dataset["i"] = String(i);
       c.addEventListener("click", () => {
-        if (c.classList.contains("taken") || c.classList.contains("terminal")) return;
+        if (!hasSession) return; // no opponent yet
+        if (c.classList.contains("taken")) return;
+        if (gridEl.classList.contains("terminal")) return;
+        if (gridEl.classList.contains("not-your-turn")) return;
         move(i);
       });
       gridEl.appendChild(c);
@@ -360,6 +386,10 @@ function connectWS(matchId: string): void {
     playersInfoEl.textContent = `${abbrev(s.playerX)} (X)  vs  ${abbrev(s.playerO)} (O)`;
 
     gridEl.classList.toggle("terminal", s.status !== "in_progress");
+    gridEl.classList.toggle(
+      "not-your-turn",
+      s.status === "in_progress" && s.turn !== mySymbol,
+    );
     for (let i = 0; i < 9; i++) {
       const c = gridEl.children[i] as HTMLDivElement;
       const v = s.board[i];
