@@ -35,6 +35,9 @@ yarn-error.log*
 .vscode/
 .idea/
 .claude/settings.local.json
+
+# Sample-game per-developer local state (player/attestor/treasury keypairs)
+**/.local/
 *.swp
 *.swo
 .DS_Store

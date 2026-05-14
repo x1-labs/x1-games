@@ -46,6 +46,42 @@ export class TttGameServer {
     this.unsubscribe();
   }
 
+  /** Snapshot of a match's session, shaped for network broadcast. Null if
+   *  the server isn't tracking the match (e.g. before attach). */
+  snapshot(matchId: string): null | {
+    matchId: string;
+    board: ReadonlyArray<string | null>;
+    turn: "X" | "O";
+    status: "in_progress" | "won" | "draw";
+    winner: string | null; // pubkey of winner, or null
+    playerX: string;
+    playerO: string;
+    seats: number;
+    settled: boolean;
+  } {
+    const m = this.matches.get(matchId);
+    if (!m) return null;
+    const s = m.session.state;
+    return {
+      matchId,
+      board: s.board,
+      turn: s.turn,
+      status: s.status,
+      winner: m.session.winnerPubkey(),
+      playerX: m.session.players[0],
+      playerO: m.session.players[1],
+      seats: m.start.seats,
+      settled: m.settled,
+    };
+  }
+
+  /** Is this pubkey one of the two participants of this match? */
+  isParticipant(matchId: string, player: string): boolean {
+    const m = this.matches.get(matchId);
+    if (!m) return false;
+    return m.session.players.includes(player);
+  }
+
   /** Manually settle a match — exposed for retry / idempotency testing. */
   async settleNow(matchId: string): Promise<void> {
     const m = this.matches.get(matchId);
