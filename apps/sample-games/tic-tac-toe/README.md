@@ -18,11 +18,23 @@ Sample game validating the X1 Games v0 integration contract end-to-end. Also the
 
 ## Run the playable demo
 
+### One command
+
+```sh
+./scripts/demo.sh
+```
+
+Starts surfpool, builds + deploys the three Anchor programs, brings up the TTT server, opens a browser. Press Ctrl-C in the same terminal to shut everything down cleanly. Re-runs are safe — it detects an existing validator and reuses it.
+
+After the script prints the demo URL, open **a second browser window** at the same address. One window clicks **create match**, copies the matchId, the other pastes and clicks **join**. Play through; outcomes settle on chain in real time.
+
+### Manual steps (if you want to inspect each piece)
+
 Prereqs:
 - Local validator running (e.g. `surfpool start` or `solana-test-validator`)
 - Programs deployed to it (`cd ../../../chain && anchor build && anchor deploy`)
 
-### Option A — Web UI (Phase A2, recommended)
+#### Web UI (Phase A2, recommended)
 
 ```sh
 # 1. Validator
@@ -48,7 +60,7 @@ Open **two browser windows** at `http://127.0.0.1:3002`. Each window:
 
 Use the **new wallet** button to wipe localStorage and get a fresh keypair (useful for testing both sides of a match in one browser via two profiles).
 
-### Option B — Terminal CLI (Phase A1)
+#### Terminal CLI (Phase A1)
 
 Same server, different players. Open four terminals:
 

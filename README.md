@@ -17,8 +17,19 @@ x1-games/
 ├── diagrams/                       # architecture & flow diagrams (SVG + PNG)
 ├── INTEGRATION.md                  # the v0 game integration contract
 ├── WHITEPAPER.md                   # design rationale
-└── scripts/test-all.sh             # local mirror of CI
+└── scripts/
+    ├── test-all.sh                 # local mirror of CI
+    ├── smoke-linux.sh              # CI loader smoke under linux+bun (docker)
+    └── demo.sh                     # one-command tic-tac-toe demo
 ```
+
+## One-command demo
+
+```sh
+./scripts/demo.sh
+```
+
+Starts a local validator, deploys the on-chain programs, brings up the tic-tac-toe game server, and opens a browser. Re-runnable; clean Ctrl-C shutdown. See `apps/sample-games/tic-tac-toe/README.md` for details.
 
 ## Toolchain (pinned versions)
 
