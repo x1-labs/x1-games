@@ -19,7 +19,9 @@ cluster = "Localnet"
 wallet = "~/.config/solana/id.json"
 
 [scripts]
-test = "bunx ts-mocha -p ./tsconfig.json -t 1000000 tests/**/*.spec.ts"
+# Run mocha under bun so TypeScript files are handled natively — avoids the
+# ts-node/ts-mocha ESM-vs-CJS dance which is fragile on Linux CI runners.
+test = "bunx mocha -t 1000000 tests/**/*.spec.ts"
 
 [test]
 startup_wait = 10000
