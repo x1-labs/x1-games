@@ -16,6 +16,7 @@ import { resolve } from "node:path";
 import { Connection, Keypair, LAMPORTS_PER_SOL } from "@solana/web3.js";
 import { Platform } from "@x1-labs/games-sdk";
 import { TttGameServer } from "./server.ts";
+import index from "../public/index.html";
 
 const RPC_URL = process.env["RPC_URL"] ?? "http://127.0.0.1:8899";
 const PORT = Number(process.env["PORT"] ?? 3002);
@@ -123,6 +124,11 @@ async function tryAttach(matchId: string): Promise<boolean> {
 
 const server = Bun.serve<ConnData>({
   port: PORT,
+  development: process.env["NODE_ENV"] !== "production",
+  routes: {
+    // Bun bundles ./public/index.html plus the .ts/.css it references.
+    "/": index,
+  },
   fetch(req, srv) {
     const url = new URL(req.url);
     if (url.pathname === "/info") {
@@ -137,12 +143,7 @@ const server = Bun.serve<ConnData>({
       if (ok) return undefined;
       return new Response("WebSocket upgrade failed", { status: 400 });
     }
-    return new Response(
-      `tic-tac-toe game server\n` +
-        `  GET /info    — discover gameId, attestor, treasury\n` +
-        `  WS  /play    — connect a player (send {"type":"hello",matchId,player})\n`,
-      { headers: { "content-type": "text/plain" } },
-    );
+    return new Response("not found", { status: 404 });
   },
   websocket: {
     async message(ws, raw) {

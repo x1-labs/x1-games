@@ -9,8 +9,10 @@ Sample game validating the X1 Games v0 integration contract end-to-end. Also the
 | `src/game.ts` | Pure TTT rules — no dependencies on the platform |
 | `src/session.ts` | One-match wrapper binding player pubkeys to X/O symbols |
 | `src/server.ts` | `TttGameServer` — drives sessions, settles via SDK |
-| `src/main.ts` | Long-running game server (HTTP + WebSocket) — Phase A1 demo |
+| `src/main.ts` | Long-running game server (HTTP + WebSocket) — Phase A1/A2 demo |
 | `src/cli.ts` | Player CLI — Phase A1 demo |
+| `public/index.html` | Web UI shell — Phase A2 demo |
+| `public/app.ts` | Browser-side wallet + chain calls + WS client — Phase A2 demo |
 | `tests/` | Bun tests for layers 1, 2, and 3 (stub end-to-end) |
 
 ## Run the playable demo
@@ -19,40 +21,49 @@ Prereqs:
 - Local validator running (e.g. `surfpool start` or `solana-test-validator`)
 - Programs deployed to it (`cd ../../../chain && anchor build && anchor deploy`)
 
-Five terminals (or `tmux`/`zellij` with five panes):
+### Option A — Web UI (Phase A2, recommended)
 
 ```sh
 # 1. Validator
 surfpool start
 
-# 2. Build + deploy programs (run once)
+# 2. Build + deploy programs (once)
 cd chain && anchor build && anchor deploy
 
-# 3. TTT game server (this package)
+# 3. TTT game server (serves UI at /)
 cd apps/sample-games/tic-tac-toe
 bun run server
-# Prints:
-#   [ttt-server] listening on http://127.0.0.1:3002
-#   [ttt-server]   gameId:    tic-tac-toe
-#   [ttt-server]   attestor:  <pubkey>
-#   [ttt-server]   treasury:  <pubkey>
+# →  [ttt-server] listening on http://127.0.0.1:3002
+```
+
+Open **two browser windows** at `http://127.0.0.1:3002`. Each window:
+
+- Generates an ephemeral wallet (persisted in localStorage) on first load.
+- Click **airdrop** to fund it (~1 SOL from the validator faucet).
+- Window A clicks **create match**, copies the matchId, sends to window B.
+- Window B pastes the matchId, clicks **join**.
+- Both see the board. Each clicks cells on their turn.
+- On terminal, the game server posts the outcome to chain. Balances update, the status shows win/lose/draw.
+
+Use the **new wallet** button to wipe localStorage and get a fresh keypair (useful for testing both sides of a match in one browser via two profiles).
+
+### Option B — Terminal CLI (Phase A1)
+
+Same server, different players. Open four terminals:
+
+```sh
+# 3. TTT game server (same as above)
+cd apps/sample-games/tic-tac-toe && bun run server
 
 # 4. Player 1
-cd apps/sample-games/tic-tac-toe
 PLAYER_KEYPAIR=.local/playerA.json bun run play create
-# Prints:
-#   [ttt-cli] player: <pubkey>
-#   [ttt-cli] match created: <matchId>
-#   [ttt-cli] tell your opponent:  bun src/cli.ts join <matchId>
+# →  [ttt-cli] match created: <matchId>
 
 # 5. Player 2
-cd apps/sample-games/tic-tac-toe
 PLAYER_KEYPAIR=.local/playerB.json bun run play join <matchId>
 ```
 
-Both player CLIs render the board in their terminal. The first player connected sees `[ttt-cli] type a cell number 0-8 to play, or 'q' to quit` and can type a cell index when it's their turn. The other player sees a "← your move" indicator on their turn.
-
-On terminal state (win or draw), the game server posts the outcome to chain via `signAndPostOutcome`. Both clients see a `[ttt-cli] match settled on chain.` message and exit.
+Both CLIs render the board in-terminal. Type a cell number 0–8 to play your turn. Both clients exit cleanly when the server confirms on-chain settlement.
 
 ## How the stack composes
 
@@ -95,8 +106,8 @@ In v0 (Phase A1):
 - ✅ Game runs server-authoritative — TTT server is the canonical sim
 - ✅ Replay uploaded to the in-process replay store, hash committed on-chain
 - ✅ Outcome posted by the TTT server's attestor key; payout atomic for TRUSTED
-- ❌ No wallet auth on the WS — players identify themselves by pubkey only (Phase A3 adds SIWS)
-- ❌ No web UI — terminal only (Phase A2 adds it)
+- ✅ Web UI with ephemeral browser wallet (Phase A2)
+- ❌ No wallet auth on the WS — players identify themselves by pubkey only (Phase A3 adds SIWS / hardware wallet)
 - ❌ Replay store is process-local — see INTEGRATION.md §3.4.1
 
 ## Tests

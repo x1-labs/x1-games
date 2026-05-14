@@ -1,0 +1,149 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>Tic-Tac-Toe · X1 Games</title>
+    <style>
+      :root {
+        --bg: #0c0d0f;
+        --panel: #15181c;
+        --panel-2: #1d2128;
+        --border: #2a2f37;
+        --fg: #e8ebee;
+        --muted: #8a929b;
+        --accent: #4ea0ff;
+        --win: #6ee787;
+        --lose: #f6796b;
+      }
+      * { box-sizing: border-box; }
+      html, body {
+        margin: 0; padding: 0;
+        background: var(--bg); color: var(--fg);
+        font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Inter, system-ui, sans-serif;
+        font-size: 14px;
+      }
+      .wrap { max-width: 720px; margin: 32px auto; padding: 0 16px; }
+      h1 { font-size: 18px; margin: 0 0 16px; letter-spacing: 0.4px; }
+      h1 .muted { color: var(--muted); font-weight: 400; }
+      .panel {
+        background: var(--panel);
+        border: 1px solid var(--border);
+        border-radius: 8px;
+        padding: 16px;
+        margin-bottom: 16px;
+      }
+      .row { display: flex; gap: 8px; align-items: center; flex-wrap: wrap; }
+      .row + .row { margin-top: 8px; }
+      label { color: var(--muted); min-width: 90px; }
+      input[type="text"] {
+        flex: 1;
+        background: var(--panel-2);
+        color: var(--fg);
+        border: 1px solid var(--border);
+        border-radius: 6px;
+        padding: 8px 10px;
+        font-family: ui-monospace, SFMono-Regular, Menlo, monospace;
+        font-size: 12px;
+      }
+      button {
+        background: var(--panel-2);
+        color: var(--fg);
+        border: 1px solid var(--border);
+        border-radius: 6px;
+        padding: 8px 12px;
+        cursor: pointer;
+        font-size: 13px;
+      }
+      button:hover { border-color: var(--accent); }
+      button:disabled { opacity: 0.4; cursor: not-allowed; border-color: var(--border); }
+      .mono { font-family: ui-monospace, SFMono-Regular, Menlo, monospace; font-size: 12px; word-break: break-all; }
+      .muted { color: var(--muted); }
+      .grid {
+        display: grid;
+        grid-template-columns: repeat(3, 96px);
+        grid-template-rows: repeat(3, 96px);
+        gap: 6px;
+        justify-content: center;
+        margin: 24px auto;
+      }
+      .cell {
+        background: var(--panel-2);
+        border: 1px solid var(--border);
+        border-radius: 8px;
+        font-size: 48px;
+        font-weight: 300;
+        color: var(--fg);
+        cursor: pointer;
+        display: flex; align-items: center; justify-content: center;
+      }
+      .cell:hover:not(.taken):not(.terminal) { border-color: var(--accent); }
+      .cell.taken { cursor: default; }
+      .cell.x { color: var(--accent); }
+      .cell.o { color: var(--lose); }
+      .terminal .cell { cursor: default; }
+      .status { text-align: center; font-size: 16px; margin: 8px 0; }
+      .status.win { color: var(--win); }
+      .status.draw { color: var(--muted); }
+      .log {
+        height: 120px; overflow-y: auto;
+        background: var(--panel-2); border: 1px solid var(--border); border-radius: 6px;
+        padding: 8px 10px;
+        font-family: ui-monospace, SFMono-Regular, Menlo, monospace; font-size: 11px;
+        color: var(--muted);
+        white-space: pre-wrap;
+      }
+      .pill { background: var(--panel-2); padding: 2px 8px; border-radius: 999px; border: 1px solid var(--border); font-family: ui-monospace, SFMono-Regular, Menlo, monospace; font-size: 11px; }
+    </style>
+  </head>
+  <body>
+    <div class="wrap">
+      <h1>Tic-Tac-Toe <span class="muted">· X1 Games</span></h1>
+
+      <div class="panel">
+        <div class="row">
+          <label>player</label>
+          <span id="player-pubkey" class="mono">…</span>
+          <span id="player-balance" class="pill">— SOL</span>
+          <button id="airdrop">airdrop</button>
+          <button id="reset-wallet" title="generate a fresh keypair">new wallet</button>
+        </div>
+        <div class="row">
+          <label>server</label>
+          <span id="server-info" class="mono muted">/info loading…</span>
+        </div>
+      </div>
+
+      <div class="panel" id="lobby-panel">
+        <div class="row">
+          <button id="btn-create">create match</button>
+          <span class="muted">or</span>
+          <input id="input-join" type="text" placeholder="paste matchId to join" />
+          <button id="btn-join">join</button>
+        </div>
+      </div>
+
+      <div class="panel" id="match-panel" hidden>
+        <div class="row">
+          <label>match</label>
+          <span id="match-id" class="mono">…</span>
+        </div>
+        <div class="row">
+          <label>X / O</label>
+          <span id="players-info" class="mono muted">…</span>
+        </div>
+        <div class="status" id="status">connecting…</div>
+        <div class="grid" id="grid">
+          <!-- 9 cells inserted by JS -->
+        </div>
+      </div>
+
+      <div class="panel">
+        <label>events</label>
+        <div class="log" id="log"></div>
+      </div>
+    </div>
+
+    <script type="module" src="./app.ts"></script>
+  </body>
+</html>
