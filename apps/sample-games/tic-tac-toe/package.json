@@ -21,7 +21,8 @@
   "dependencies": {
     "@solana/web3.js": "^1.95.4",
     "@x1-labs/games-protocol": "workspace:*",
-    "@x1-labs/games-sdk": "workspace:*"
+    "@x1-labs/games-sdk": "workspace:*",
+    "tweetnacl": "^1.0.3"
   },
   "devDependencies": {
     "@types/bun": "^1.1.13",

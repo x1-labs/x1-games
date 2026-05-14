@@ -17,6 +17,7 @@ import { stdin, stdout, exit, argv } from "node:process";
 import * as readline from "node:readline/promises";
 import { Connection, Keypair, LAMPORTS_PER_SOL } from "@solana/web3.js";
 import { Platform } from "@x1-labs/games-sdk";
+import { signHello } from "./auth.ts";
 
 const RPC_URL = process.env["RPC_URL"] ?? "http://127.0.0.1:8899";
 const SERVER_HTTP = process.env["TTT_SERVER_HTTP"] ?? "http://127.0.0.1:3002";
@@ -102,7 +103,41 @@ await new Promise<void>((res, rej) => {
   ws.addEventListener("open", () => res(), { once: true });
   ws.addEventListener("error", (e) => rej(e), { once: true });
 });
-ws.send(JSON.stringify({ type: "hello", matchId, player: player.publicKey.toBase58() }));
+
+// Wait for the server's challenge, sign it, then send hello.
+await new Promise<void>((res, rej) => {
+  const onMsg = (ev: MessageEvent) => {
+    let msg: { type?: string; nonce?: string; timestamp?: number };
+    try {
+      msg = JSON.parse(ev.data as string);
+    } catch {
+      return;
+    }
+    if (msg.type !== "challenge") return;
+    if (!msg.nonce || msg.timestamp === undefined) {
+      rej(new Error("challenge missing nonce/timestamp"));
+      return;
+    }
+    ws.removeEventListener("message", onMsg);
+    const signature = signHello(
+      msg.nonce,
+      msg.timestamp,
+      matchId,
+      player.publicKey.toBase58(),
+      player.secretKey,
+    );
+    ws.send(
+      JSON.stringify({
+        type: "hello",
+        matchId,
+        player: player.publicKey.toBase58(),
+        signature,
+      }),
+    );
+    res();
+  };
+  ws.addEventListener("message", onMsg);
+});
 
 let mySymbol: "X" | "O" | null = null;
 let lastState: {

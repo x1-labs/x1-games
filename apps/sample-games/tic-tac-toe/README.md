@@ -11,8 +11,9 @@ Sample game validating the X1 Games v0 integration contract end-to-end. Also the
 | `src/server.ts` | `TttGameServer` — drives sessions, settles via SDK |
 | `src/main.ts` | Long-running game server (HTTP + WebSocket) — Phase A1/A2 demo |
 | `src/cli.ts` | Player CLI — Phase A1 demo |
+| `src/auth.ts` | SIWS-style WS challenge/hello (Phase A3) — shared by all clients |
 | `public/index.html` | Web UI shell — Phase A2 demo |
-| `public/app.ts` | Browser-side wallet + chain calls + WS client — Phase A2 demo |
+| `public/app.ts` | Browser-side wallet + chain calls + WS client — Phase A2/A3 demo |
 | `tests/` | Bun tests for layers 1, 2, and 3 (stub end-to-end) |
 
 ## Run the playable demo
@@ -107,8 +108,9 @@ In v0 (Phase A1):
 - ✅ Replay uploaded to the in-process replay store, hash committed on-chain
 - ✅ Outcome posted by the TTT server's attestor key; payout atomic for TRUSTED
 - ✅ Web UI with ephemeral browser wallet (Phase A2)
-- ❌ No wallet auth on the WS — players identify themselves by pubkey only (Phase A3 adds SIWS / hardware wallet)
+- ✅ Signed WS auth — server issues a per-connection nonce, client signs `{domain|nonce|timestamp|matchId|player}` with their ed25519 key, server verifies before binding the connection (Phase A3, see `src/auth.ts`)
 - ❌ Replay store is process-local — see INTEGRATION.md §3.4.1
+- ❌ No real wallet adapter (Phantom, etc.) — the browser stores an ephemeral keypair in localStorage. Production would integrate `@solana/wallet-adapter-*`.
 
 ## Tests
 

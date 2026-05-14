@@ -16,6 +16,7 @@ import {
 } from "@solana/web3.js";
 
 import matchIdl from "../../../../packages/games-sdk/src/idl/match_program.json";
+import { signHello } from "../src/auth.ts";
 
 const MATCH_PROGRAM_ID = new PublicKey("kPnK69DwUAmEobyLiWNNmra6STdJLFszJxc314XkEKb");
 const GAME_REGISTRY_PROGRAM_ID = new PublicKey("92NzjeGS2kEuLw53vAvox6eFdNfT2VoSTrSX4uGTHKbS");
@@ -288,16 +289,34 @@ function connectWS(matchId: string): void {
   buildGrid();
 
   const ws = new WebSocket(WS_URL);
-  ws.addEventListener("open", () => {
-    log("ws open · sending hello");
-    ws.send(JSON.stringify({ type: "hello", matchId, player: player.publicKey.toBase58() }));
-  });
+  ws.addEventListener("open", () => log("ws open · waiting for challenge"));
   ws.addEventListener("close", () => log("ws close"));
   ws.addEventListener("message", (ev) => {
     let msg: { type?: string; message?: string; winner?: string; [k: string]: unknown };
     try {
       msg = JSON.parse(ev.data);
     } catch {
+      return;
+    }
+    if (msg.type === "challenge") {
+      const nonce = msg["nonce"] as string;
+      const ts = msg["timestamp"] as number;
+      log(`signing challenge · nonce=${nonce.slice(0, 8)}…`);
+      const signature = signHello(
+        nonce,
+        ts,
+        matchId,
+        player.publicKey.toBase58(),
+        player.secretKey,
+      );
+      ws.send(
+        JSON.stringify({
+          type: "hello",
+          matchId,
+          player: player.publicKey.toBase58(),
+          signature,
+        }),
+      );
       return;
     }
     if (msg.type === "state") render(msg as unknown as StateMsg);

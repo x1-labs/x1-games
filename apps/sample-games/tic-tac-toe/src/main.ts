@@ -13,10 +13,16 @@
 
 import { existsSync, mkdirSync, readFileSync, writeFileSync } from "node:fs";
 import { resolve } from "node:path";
-import { Connection, Keypair, LAMPORTS_PER_SOL } from "@solana/web3.js";
+import { Connection, Keypair, LAMPORTS_PER_SOL, PublicKey } from "@solana/web3.js";
 import { Platform } from "@x1-labs/games-sdk";
 import { TttGameServer } from "./server.ts";
 import index from "../public/index.html";
+import {
+  DOMAIN,
+  newNonce,
+  verifyHello,
+  type HelloMsg,
+} from "./auth.ts";
 
 const RPC_URL = process.env["RPC_URL"] ?? "http://127.0.0.1:8899";
 const PORT = Number(process.env["PORT"] ?? 3002);
@@ -94,6 +100,10 @@ const game = new TttGameServer({ platform });
 interface ConnData {
   matchId: string | null;
   player: string | null;
+  /** Challenge issued to this connection. Cleared once a valid hello consumes it. */
+  challenge: { nonce: string; timestamp: number } | null;
+  /** True once a valid hello has been verified for this connection. */
+  authed: boolean;
 }
 
 const connsByMatch = new Map<string, Set<Bun.ServerWebSocket<ConnData>>>();
@@ -139,28 +149,86 @@ const server = Bun.serve<ConnData>({
       });
     }
     if (url.pathname === "/play") {
-      const ok = srv.upgrade(req, { data: { matchId: null, player: null } });
+      const ok = srv.upgrade(req, {
+        data: { matchId: null, player: null, challenge: null, authed: false },
+      });
       if (ok) return undefined;
       return new Response("WebSocket upgrade failed", { status: 400 });
     }
     return new Response("not found", { status: 404 });
   },
   websocket: {
+    open(ws) {
+      // Issue a per-connection challenge immediately. Hello must echo this.
+      const nonce = newNonce();
+      const timestamp = Math.floor(Date.now() / 1000);
+      ws.data.challenge = { nonce, timestamp };
+      ws.send(JSON.stringify({ type: "challenge", nonce, timestamp, domain: DOMAIN }));
+    },
     async message(ws, raw) {
-      let msg: { type?: string; matchId?: string; player?: string; cell?: number };
+      let msg: {
+        type?: string;
+        matchId?: string;
+        player?: string;
+        signature?: string;
+        cell?: number;
+      };
       try {
         msg = JSON.parse(raw.toString());
       } catch {
         ws.send(JSON.stringify({ type: "error", message: "invalid JSON" }));
         return;
       }
+
       if (msg.type === "hello") {
-        if (!msg.matchId || !msg.player) {
-          ws.send(JSON.stringify({ type: "error", message: "hello requires matchId and player" }));
+        if (ws.data.authed) {
+          ws.send(JSON.stringify({ type: "error", message: "already authed" }));
           return;
         }
+        if (!ws.data.challenge) {
+          ws.send(JSON.stringify({ type: "error", message: "no active challenge" }));
+          return;
+        }
+        if (!msg.matchId || !msg.player || !msg.signature) {
+          ws.send(
+            JSON.stringify({
+              type: "error",
+              message: "hello requires matchId, player, signature",
+            }),
+          );
+          return;
+        }
+
+        let pubkeyBytes: Uint8Array;
+        try {
+          pubkeyBytes = new PublicKey(msg.player).toBytes();
+        } catch {
+          ws.send(JSON.stringify({ type: "error", message: "player is not a valid pubkey" }));
+          ws.close(1008, "bad pubkey");
+          return;
+        }
+        const hello: HelloMsg = {
+          type: "hello",
+          matchId: msg.matchId,
+          player: msg.player,
+          signature: msg.signature,
+        };
+        const err = verifyHello(
+          ws.data.challenge,
+          hello,
+          pubkeyBytes,
+          Math.floor(Date.now() / 1000),
+        );
+        if (err) {
+          ws.send(JSON.stringify({ type: "error", message: `auth: ${err}` }));
+          ws.close(1008, "auth failed");
+          return;
+        }
+
         ws.data.matchId = msg.matchId;
         ws.data.player = msg.player;
+        ws.data.authed = true;
+        ws.data.challenge = null; // single-use
 
         let set = connsByMatch.get(msg.matchId);
         if (!set) {
@@ -172,7 +240,9 @@ const server = Bun.serve<ConnData>({
         const attached = await tryAttach(msg.matchId);
         if (attached) {
           if (!game.isParticipant(msg.matchId, msg.player)) {
-            ws.send(JSON.stringify({ type: "error", message: "not a participant of this match" }));
+            ws.send(
+              JSON.stringify({ type: "error", message: "not a participant of this match" }),
+            );
           }
           broadcast(msg.matchId);
         } else {
@@ -185,10 +255,16 @@ const server = Bun.serve<ConnData>({
         }
         return;
       }
+
+      if (!ws.data.authed) {
+        ws.send(JSON.stringify({ type: "error", message: "not authenticated; send hello first" }));
+        return;
+      }
+
       if (msg.type === "move") {
         const { matchId, player } = ws.data;
         if (!matchId || !player) {
-          ws.send(JSON.stringify({ type: "error", message: "send hello first" }));
+          ws.send(JSON.stringify({ type: "error", message: "missing match/player binding" }));
           return;
         }
         if (msg.cell === undefined) {
