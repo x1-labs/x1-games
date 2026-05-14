@@ -239,6 +239,13 @@ async function joinMatch(matchId: string): Promise<void> {
 
 // ----- lobby buttons ----------------------------------------------------
 
+/** Reflect the active match into the page URL so it's shareable as a link. */
+function setUrlForMatch(matchId: string): void {
+  const url = new URL(location.href);
+  url.searchParams.set("match", matchId);
+  history.replaceState(null, "", url.toString());
+}
+
 $("btn-create").addEventListener("click", async () => {
   if (!info) {
     log("server /info not loaded yet");
@@ -251,6 +258,7 @@ $("btn-create").addEventListener("click", async () => {
     log("joining as creator…");
     await joinMatch(matchId);
     log("joined; opening session");
+    setUrlForMatch(matchId);
     connectWS(matchId);
   } catch (e) {
     log(`create failed: ${(e as Error).message}`);
@@ -267,11 +275,28 @@ $("btn-join").addEventListener("click", async () => {
     log(`joining ${abbrev(matchId)}…`);
     await joinMatch(matchId);
     log("joined; opening session");
+    setUrlForMatch(matchId);
     connectWS(matchId);
   } catch (e) {
     log(`join failed: ${(e as Error).message}`);
   }
 });
+
+// If the URL carries a matchId, prefill the join input and highlight it. The
+// player still has to click 'join' explicitly — we don't auto-fire an
+// on-chain tx without their consent.
+{
+  const fromUrl = new URL(location.href).searchParams.get("match")?.trim() ?? "";
+  if (fromUrl) {
+    const inputEl = $("input-join") as HTMLInputElement;
+    inputEl.value = fromUrl;
+    log(`joinable matchId in URL · click 'join' to enter`);
+    // Make the join button visually primary if we landed via a share link.
+    const joinBtn = $("btn-join");
+    joinBtn.style.borderColor = "var(--accent)";
+    joinBtn.focus();
+  }
+}
 
 // ----- WebSocket session -----------------------------------------------
 
@@ -294,18 +319,22 @@ function connectWS(matchId: string): void {
   matchPanel.hidden = false;
   matchIdEl.textContent = matchId;
   statusEl.className = "status";
-  statusEl.textContent = "waiting for opponent · share the matchId above";
+  statusEl.textContent = "waiting for opponent · copy the link and send it";
   buildGrid();
-  // Add a copy-matchId affordance once.
-  if (!document.getElementById("copy-match")) {
+  // Add a copy-link affordance once. Sharing the URL gets the opponent
+  // straight into a join-ready state, no manual paste required.
+  if (!document.getElementById("copy-link")) {
     const btn = document.createElement("button");
-    btn.id = "copy-match";
-    btn.textContent = "copy matchId";
+    btn.id = "copy-link";
+    btn.textContent = "copy link";
     btn.style.marginLeft = "8px";
     btn.addEventListener("click", () => {
-      navigator.clipboard.writeText(matchId).then(() => {
+      const url = new URL(location.href);
+      url.searchParams.set("match", matchId);
+      const link = url.toString();
+      navigator.clipboard.writeText(link).then(() => {
         btn.textContent = "copied ✓";
-        setTimeout(() => (btn.textContent = "copy matchId"), 1500);
+        setTimeout(() => (btn.textContent = "copy link"), 1500);
       });
     });
     matchIdEl.parentElement?.appendChild(btn);
@@ -352,7 +381,7 @@ function connectWS(matchId: string): void {
     } else if (msg.type === "info") {
       log(`server: ${msg.message}`);
       if (!hasSession) {
-        statusEl.textContent = "waiting for opponent · share the matchId above";
+        statusEl.textContent = "waiting for opponent · copy the link and send it";
       }
     } else if (msg.type === "error") log(`server error: ${msg.message}`);
   });
