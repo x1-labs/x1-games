@@ -58,8 +58,10 @@ type MatchStartHandler = (event: MatchStart) => void;
 
 // Anchor's IDL type juggling — we treat the program as `any` because typing
 // against a string-literal IDL union in v0 is more friction than payoff.
+// `Program<any>` still resolves to a strict-but-empty `AccountNamespace<any>`
+// where `.account.match` etc. are typed as missing, so use raw `any` instead.
 // eslint-disable-next-line @typescript-eslint/no-explicit-any
-type AnyProgram = anchor.Program<any>;
+type AnyProgram = any;
 
 /** Derive the Game PDA for a given string game id. PDA lives under the
  *  game_registry program. */
@@ -185,6 +187,7 @@ interface MatchAccountRaw {
   outcome: MatchOutcomeRaw | null;
   challengeWindowSecs: number;
   settledAt: anchor.BN;
+  housePrize: anchor.BN;
   players: web3.PublicKey[];
   bump: number;
   vaultBump: number;
@@ -335,6 +338,7 @@ export class SolanaBackend {
 
     const challengeWindowSecs =
       input.challengeWindowSecs ?? (input.model === "OPTIMISTIC" ? 3600 : 0);
+    const housePrize = input.housePrize ? new BN(input.housePrize) : new BN(0);
 
     await this.program.methods
       .createMatch({
@@ -348,6 +352,7 @@ export class SolanaBackend {
         attestor: new PublicKey(input.attestor),
         treasury: new PublicKey(input.treasury),
         challengeWindowSecs,
+        housePrize,
       })
       .accounts({
         game: gameIdPk,
@@ -507,13 +512,14 @@ export class SolanaBackend {
       vaultLamports,
       seats: m.seats,
       stakePerSeat: m.stakePerSeat.toString(),
+      housePrize: m.housePrize.toString(),
       rakeBps: m.rakeBps,
       model: decodeModel(m.model),
       attestorPubkey: m.attestor.toBase58(),
       seed,
       challengeWindowSecs: m.challengeWindowSecs,
       settledAt: m.settledAt.toNumber(),
-      outcome,
+      ...(outcome ? { outcome } : {}),
     };
   }
 

@@ -60,12 +60,25 @@ pub mod match_program {
         m.players = Vec::new();
         m.challenge_window_secs = args.challenge_window_secs;
         m.settled_at = 0;
+        m.house_prize = args.house_prize;
         m.bump = ctx.bumps.match_account;
         m.vault_bump = ctx.bumps.vault;
 
         let v = &mut ctx.accounts.vault;
         v.match_account = ctx.accounts.match_account.key();
         v.bump = ctx.bumps.vault;
+
+        // Escrow the house prize, if any, from the creator into the vault.
+        if args.house_prize > 0 {
+            let cpi_ctx = CpiContext::new(
+                ctx.accounts.system_program.key(),
+                system_program::Transfer {
+                    from: ctx.accounts.creator.to_account_info(),
+                    to: ctx.accounts.vault.to_account_info(),
+                },
+            );
+            system_program::transfer(cpi_ctx, args.house_prize)?;
+        }
 
         Ok(())
     }
@@ -147,9 +160,12 @@ pub mod match_program {
             MatchError::WinnersAccountsMismatch,
         );
 
-        let pot: u64 = m
+        let stakes: u64 = m
             .stake_per_seat
             .checked_mul(m.players.len() as u64)
+            .ok_or(MatchError::Overflow)?;
+        let pot: u64 = stakes
+            .checked_add(m.house_prize)
             .ok_or(MatchError::Overflow)?;
         let rake: u64 = (pot as u128)
             .checked_mul(m.rake_bps as u128)
@@ -298,6 +314,11 @@ pub struct CreateMatchArgs {
     /// is the dispute window — anyone may challenge during this period (the
     /// dispute path itself is not implemented in v0).
     pub challenge_window_secs: u32,
+    /// Optional house contribution to the pot, deposited by `creator` into
+    /// the vault at create time. For solo-vs-house games (Pacman-class), the
+    /// platform service creates the match with itself as creator and stakes
+    /// the prize here. Zero for PvP. Counts toward `pot` at settlement.
+    pub house_prize: u64,
 }
 
 // --- accounts ----------------------------------------------------------------
@@ -436,6 +457,8 @@ pub struct Match {
     pub challenge_window_secs: u32,
     /// Unix timestamp at which `post_outcome` ran. 0 until the match is Settled.
     pub settled_at: i64,
+    /// House contribution recorded at create time. Counts toward `pot`.
+    pub house_prize: u64,
     #[max_len(MAX_SEATS as usize)]
     pub players: Vec<Pubkey>,
     pub bump: u8,

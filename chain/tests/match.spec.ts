@@ -88,6 +88,8 @@ interface CreateMatchOpts {
   attestor?: pkg.PublicKey;
   treasury?: pkg.PublicKey;
   gameIdString?: string;
+  housePrize?: number;
+  creator?: pkg.Keypair;
 }
 
 async function createTestMatch(opts: CreateMatchOpts = {}): Promise<{
@@ -100,11 +102,12 @@ async function createTestMatch(opts: CreateMatchOpts = {}): Promise<{
   attestor: pkg.PublicKey;
   treasury: pkg.PublicKey;
 }> {
-  const dev = (provider.wallet as Wallet).payer;
+  const dev = opts.creator ?? (provider.wallet as Wallet).payer;
   const nonce = new BN(Math.floor(Math.random() * 1_000_000));
   const seats = opts.seats ?? 1;
   const stakePerSeat = opts.stakePerSeat ?? 5_000_000;
   const rakeBps = opts.rakeBps ?? 300;
+  const housePrize = opts.housePrize ?? 0;
   const idString = opts.gameIdString ?? `tg-${Math.floor(Math.random() * 1_000_000).toString(36)}`;
   const { gamePda, attestor: registeredAttestor } = await ensureRegisteredGame({
     id: idString,
@@ -129,6 +132,7 @@ async function createTestMatch(opts: CreateMatchOpts = {}): Promise<{
       attestor,
       treasury,
       challengeWindowSecs: 0,
+      housePrize: new BN(housePrize),
     })
     .accounts({
       game: gamePda,
@@ -189,6 +193,7 @@ describe("match_program — create_match", () => {
           attestor: dev.publicKey,
           treasury: Keypair.generate().publicKey,
           challengeWindowSecs: 0,
+          housePrize: new BN(0),
         })
         .accounts({
           game: gamePda,
@@ -203,6 +208,28 @@ describe("match_program — create_match", () => {
       failed = true;
     }
     expect(failed, "create_match should reject seats = 0").to.equal(true);
+  });
+
+  it("escrows house_prize from creator into vault at create time", async () => {
+    const housePrize = 50_000_000;
+    // Use a fresh, funded creator so we can attribute the lamport delta cleanly.
+    const creator = Keypair.generate();
+    await airdrop(creator.publicKey, LAMPORTS_PER_SOL);
+    const balBefore = await provider.connection.getBalance(creator.publicKey);
+
+    const { vaultPda } = await createTestMatch({
+      seats: 1,
+      stakePerSeat: 5_000_000,
+      housePrize,
+      creator,
+    });
+
+    const balAfter = await provider.connection.getBalance(creator.publicKey);
+    const vaultBal = await provider.connection.getBalance(vaultPda);
+    // Vault sits at rent-exempt minimum + housePrize; we only assert the prize portion.
+    expect(vaultBal, "vault holds at least the house_prize").to.be.gte(housePrize);
+    // Creator paid out at least house_prize + rent/fees.
+    expect(balBefore - balAfter, "creator paid >= house_prize").to.be.gte(housePrize);
   });
 });
 
@@ -488,5 +515,96 @@ describe("match_program — post_outcome (TRUSTED)", () => {
       failed = true;
     }
     expect(failed, "post_outcome on non-Live match should be rejected").to.equal(true);
+  });
+
+  it("solo-vs-house: winner takes stake + house_prize − rake", async () => {
+    const dev = (provider.wallet as Wallet).payer;
+    const stake = 5_000_000;
+    const housePrize = 50_000_000;
+    const rakeBps = 300;
+
+    const ctx = await createTestMatch({ seats: 1, stakePerSeat: stake, rakeBps, housePrize });
+    const player = Keypair.generate();
+    await airdrop(player.publicKey, LAMPORTS_PER_SOL);
+    await program.methods.joinMatch().accounts({
+      matchAccount: ctx.matchPda, vault: ctx.vaultPda, player: player.publicKey, systemProgram: SystemProgram.programId,
+    }).signers([player]).rpc();
+    await airdrop(ctx.treasury, 1);
+
+    const pot = stake + housePrize;
+    const expectedRake = Math.floor((pot * rakeBps) / 10_000);
+    const expectedPayout = pot - expectedRake;
+
+    const winnerBefore = await provider.connection.getBalance(player.publicKey);
+    const treasuryBefore = await provider.connection.getBalance(ctx.treasury);
+
+    await program.methods
+      .postOutcome({ payouts: [new BN(expectedPayout)], replayHash: REPLAY_HASH })
+      .accounts({
+        matchAccount: ctx.matchPda,
+        vault: ctx.vaultPda,
+        attestor: dev.publicKey,
+        treasury: ctx.treasury,
+      })
+      .remainingAccounts([{ pubkey: player.publicKey, isSigner: false, isWritable: true }])
+      .signers([dev])
+      .rpc();
+
+    const winnerAfter = await provider.connection.getBalance(player.publicKey);
+    const treasuryAfter = await provider.connection.getBalance(ctx.treasury);
+    expect(winnerAfter - winnerBefore).to.equal(expectedPayout);
+    expect(treasuryAfter - treasuryBefore).to.equal(expectedRake);
+
+    const m = await program.account.match.fetch(ctx.matchPda);
+    expect(m.housePrize.toNumber()).to.equal(housePrize);
+    expect(m.outcome.winners[0].payout.toNumber()).to.equal(expectedPayout);
+  });
+
+  it("solo-vs-house: house wallet may be the sole winner when player loses", async () => {
+    // When the player loses against the house, the platform service settles with
+    // the creator (= the house wallet that funded house_prize) as the winner.
+    // Net effect: house gets back its prize plus the player's stake, minus rake.
+    const dev = (provider.wallet as Wallet).payer;
+    const stake = 5_000_000;
+    const housePrize = 50_000_000;
+    const rakeBps = 300;
+
+    // Use a dedicated keypair for the house so we can observe its balance.
+    const house = Keypair.generate();
+    await airdrop(house.publicKey, LAMPORTS_PER_SOL);
+    const ctx = await createTestMatch({
+      seats: 1, stakePerSeat: stake, rakeBps, housePrize, creator: house,
+    });
+    const player = Keypair.generate();
+    await airdrop(player.publicKey, LAMPORTS_PER_SOL);
+    await program.methods.joinMatch().accounts({
+      matchAccount: ctx.matchPda, vault: ctx.vaultPda, player: player.publicKey, systemProgram: SystemProgram.programId,
+    }).signers([player]).rpc();
+    await airdrop(ctx.treasury, 1);
+
+    const pot = stake + housePrize;
+    const expectedRake = Math.floor((pot * rakeBps) / 10_000);
+    const expectedPayout = pot - expectedRake;
+
+    const houseBefore = await provider.connection.getBalance(house.publicKey);
+    const playerBefore = await provider.connection.getBalance(player.publicKey);
+
+    await program.methods
+      .postOutcome({ payouts: [new BN(expectedPayout)], replayHash: REPLAY_HASH })
+      .accounts({
+        matchAccount: ctx.matchPda,
+        vault: ctx.vaultPda,
+        attestor: dev.publicKey,
+        treasury: ctx.treasury,
+      })
+      .remainingAccounts([{ pubkey: house.publicKey, isSigner: false, isWritable: true }])
+      .signers([dev])
+      .rpc();
+
+    const houseAfter = await provider.connection.getBalance(house.publicKey);
+    const playerAfter = await provider.connection.getBalance(player.publicKey);
+    expect(houseAfter - houseBefore).to.equal(expectedPayout);
+    // Player got nothing back from the vault.
+    expect(playerAfter).to.equal(playerBefore);
   });
 });

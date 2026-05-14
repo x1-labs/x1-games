@@ -69,7 +69,7 @@ interface StoredMatch {
   gameId: GameId;
   seats: number;
   stakePerSeat: XntLamports;
-  housePrize: XntLamports | null;
+  housePrize: XntLamports;
   rakeBps: number;
   model: AttestationModel;
   attestorPubkey: Pubkey;
@@ -164,6 +164,8 @@ export interface MatchView {
   challengeWindowSecs: number;
   /** Unix sec the outcome was posted. 0 until Settled. */
   settledAt: number;
+  /** House contribution to the pot, in lamports. "0" for pure-PvP. */
+  housePrize: XntLamports;
   outcome?: OutcomeBody;
 }
 
@@ -197,9 +199,9 @@ export interface GameView {
 }
 
 export interface ListMatchesInput {
-  gameId?: GameId;
+  gameId?: GameId | undefined;
   /** Limit returned set; default 100. */
-  limit?: number;
+  limit?: number | undefined;
 }
 
 // =============================================================================
@@ -311,7 +313,8 @@ export class StubBackend {
       seed,
       challengeWindowSecs: m.challengeWindowSecs,
       settledAt: m.settledAt,
-      outcome: m.outcome,
+      housePrize: m.housePrize ?? "0",
+      ...(m.outcome ? { outcome: m.outcome } : {}),
     };
   }
 
@@ -344,7 +347,6 @@ export class StubBackend {
       gameId: input.gameId,
       seats: input.seats,
       stakePerSeat: input.stakePerSeat,
-      housePrize: input.housePrize,
       rakeBps: input.rakeBps,
       model: input.model,
       attestorPubkey: game.attestorPubkey,
@@ -355,6 +357,7 @@ export class StubBackend {
       settlementDeadline: now + input.settlementDeadlineSec,
       challengeWindowSecs,
       settledAt: 0,
+      housePrize: input.housePrize ?? "0",
     });
 
     return { matchId, vaultAddress };
@@ -459,7 +462,8 @@ export class StubBackend {
       seed,
       challengeWindowSecs: m.challengeWindowSecs,
       settledAt: m.settledAt,
-      outcome: m.outcome,
+      housePrize: m.housePrize ?? "0",
+      ...(m.outcome ? { outcome: m.outcome } : {}),
     };
   }
 

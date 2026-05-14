@@ -103,6 +103,7 @@ async function settledSoloMatch(idString: string): Promise<SettledMatchSetup> {
       attestor: dev.publicKey,
       treasury,
       challengeWindowSecs: 0,
+      housePrize: new BN(0),
     })
     .accounts({
       game: gamePda,
@@ -269,6 +270,7 @@ describe("xp_ledger — credit_xp", () => {
         attestor: dev.publicKey,
         treasury: treasury2,
         challengeWindowSecs: 0,
+        housePrize: new BN(0),
       })
       .accounts({
         game: gamePda, matchAccount: matchPda2, vault: vaultPda2,

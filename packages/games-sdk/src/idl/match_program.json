@@ -568,6 +568,16 @@
               "dispute path itself is not implemented in v0)."
             ],
             "type": "u32"
+          },
+          {
+            "name": "house_prize",
+            "docs": [
+              "Optional house contribution to the pot, deposited by `creator` into",
+              "the vault at create time. For solo-vs-house games (Pacman-class), the",
+              "platform service creates the match with itself as creator and stakes",
+              "the prize here. Zero for PvP. Counts toward `pot` at settlement."
+            ],
+            "type": "u64"
           }
         ]
       }
@@ -714,6 +724,13 @@
               "Unix timestamp at which `post_outcome` ran. 0 until the match is Settled."
             ],
             "type": "i64"
+          },
+          {
+            "name": "house_prize",
+            "docs": [
+              "House contribution recorded at create time. Counts toward `pot`."
+            ],
+            "type": "u64"
           },
           {
             "name": "players",

@@ -71,7 +71,7 @@ export function applyMove(state: GameState, move: Move): GameState {
 function detectWinner(board: Board): Player | null {
   for (const [a, b, c] of WIN_LINES) {
     const v = board[a];
-    if (v !== null && v === board[b] && v === board[c]) return v;
+    if (v != null && v === board[b] && v === board[c]) return v;
   }
   return null;
 }
