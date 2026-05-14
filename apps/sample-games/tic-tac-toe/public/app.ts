@@ -6,6 +6,13 @@
 //
 // Live game traffic: same WebSocket protocol the CLI uses (hello/move/state).
 
+// Browser node-shim. Must run BEFORE anchor/web3 modules evaluate, so it
+// lives ahead of every other import. Bun's HTML dev-mode bundler doesn't
+// auto-polyfill Buffer/process the way `bun build --target=browser` does.
+import { Buffer } from "buffer";
+// eslint-disable-next-line @typescript-eslint/no-explicit-any
+(globalThis as any).Buffer = Buffer;
+
 import * as anchor from "@coral-xyz/anchor";
 import {
   Connection,
