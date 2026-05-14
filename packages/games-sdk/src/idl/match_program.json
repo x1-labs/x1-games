@@ -1,0 +1,879 @@
+{
+  "address": "kPnK69DwUAmEobyLiWNNmra6STdJLFszJxc314XkEKb",
+  "metadata": {
+    "name": "match_program",
+    "version": "0.0.1",
+    "spec": "0.1.0",
+    "description": "x1-games Match program — escrow + settlement for wagered matches"
+  },
+  "instructions": [
+    {
+      "name": "create_match",
+      "discriminator": [
+        107,
+        2,
+        184,
+        145,
+        70,
+        142,
+        17,
+        165
+      ],
+      "accounts": [
+        {
+          "name": "game",
+          "docs": [
+            "The registered Game this match belongs to. Owned by game_registry."
+          ]
+        },
+        {
+          "name": "match_account",
+          "writable": true,
+          "pda": {
+            "seeds": [
+              {
+                "kind": "const",
+                "value": [
+                  109,
+                  97,
+                  116,
+                  99,
+                  104
+                ]
+              },
+              {
+                "kind": "account",
+                "path": "game"
+              },
+              {
+                "kind": "arg",
+                "path": "args.nonce"
+              }
+            ]
+          }
+        },
+        {
+          "name": "vault",
+          "docs": [
+            "Vault PDA — program-owned, holds escrowed lamports plus a back-reference",
+            "to the match. Created at match creation so it exists for the first",
+            "deposit (house prize in solo, player stakes in PvP)."
+          ],
+          "writable": true,
+          "pda": {
+            "seeds": [
+              {
+                "kind": "const",
+                "value": [
+                  118,
+                  97,
+                  117,
+                  108,
+                  116
+                ]
+              },
+              {
+                "kind": "account",
+                "path": "match_account"
+              }
+            ]
+          }
+        },
+        {
+          "name": "creator",
+          "writable": true,
+          "signer": true
+        },
+        {
+          "name": "system_program",
+          "address": "11111111111111111111111111111111"
+        }
+      ],
+      "args": [
+        {
+          "name": "args",
+          "type": {
+            "defined": {
+              "name": "CreateMatchArgs"
+            }
+          }
+        }
+      ]
+    },
+    {
+      "name": "finalize_match",
+      "docs": [
+        "Pay out a Settled match whose challenge window has elapsed. Anyone may",
+        "call this — the action is deterministic from the on-chain outcome.",
+        "Winner accounts arrive as remaining_accounts in the same order as",
+        "match.outcome.winners."
+      ],
+      "discriminator": [
+        6,
+        103,
+        47,
+        7,
+        66,
+        1,
+        85,
+        207
+      ],
+      "accounts": [
+        {
+          "name": "match_account",
+          "writable": true,
+          "pda": {
+            "seeds": [
+              {
+                "kind": "const",
+                "value": [
+                  109,
+                  97,
+                  116,
+                  99,
+                  104
+                ]
+              },
+              {
+                "kind": "account",
+                "path": "match_account.game_id",
+                "account": "Match"
+              },
+              {
+                "kind": "account",
+                "path": "match_account.nonce",
+                "account": "Match"
+              }
+            ]
+          }
+        },
+        {
+          "name": "vault",
+          "writable": true,
+          "pda": {
+            "seeds": [
+              {
+                "kind": "const",
+                "value": [
+                  118,
+                  97,
+                  117,
+                  108,
+                  116
+                ]
+              },
+              {
+                "kind": "account",
+                "path": "match_account"
+              }
+            ]
+          }
+        },
+        {
+          "name": "treasury",
+          "writable": true
+        }
+      ],
+      "args": []
+    },
+    {
+      "name": "join_match",
+      "discriminator": [
+        244,
+        8,
+        47,
+        130,
+        192,
+        59,
+        179,
+        44
+      ],
+      "accounts": [
+        {
+          "name": "match_account",
+          "writable": true,
+          "pda": {
+            "seeds": [
+              {
+                "kind": "const",
+                "value": [
+                  109,
+                  97,
+                  116,
+                  99,
+                  104
+                ]
+              },
+              {
+                "kind": "account",
+                "path": "match_account.game_id",
+                "account": "Match"
+              },
+              {
+                "kind": "account",
+                "path": "match_account.nonce",
+                "account": "Match"
+              }
+            ]
+          }
+        },
+        {
+          "name": "vault",
+          "writable": true,
+          "pda": {
+            "seeds": [
+              {
+                "kind": "const",
+                "value": [
+                  118,
+                  97,
+                  117,
+                  108,
+                  116
+                ]
+              },
+              {
+                "kind": "account",
+                "path": "match_account"
+              }
+            ]
+          }
+        },
+        {
+          "name": "player",
+          "writable": true,
+          "signer": true
+        },
+        {
+          "name": "system_program",
+          "address": "11111111111111111111111111111111"
+        }
+      ],
+      "args": []
+    },
+    {
+      "name": "post_outcome",
+      "docs": [
+        "Post the outcome of a Live match. Winner accounts arrive as",
+        "`remaining_accounts`, in the same order as `args.payouts`. Transitions",
+        "to Settled and records the outcome. For zero-window models (TRUSTED,",
+        "COSIGNED), also pays out inline and transitions to Paid."
+      ],
+      "discriminator": [
+        39,
+        57,
+        207,
+        38,
+        238,
+        248,
+        46,
+        248
+      ],
+      "accounts": [
+        {
+          "name": "match_account",
+          "writable": true,
+          "pda": {
+            "seeds": [
+              {
+                "kind": "const",
+                "value": [
+                  109,
+                  97,
+                  116,
+                  99,
+                  104
+                ]
+              },
+              {
+                "kind": "account",
+                "path": "match_account.game_id",
+                "account": "Match"
+              },
+              {
+                "kind": "account",
+                "path": "match_account.nonce",
+                "account": "Match"
+              }
+            ]
+          }
+        },
+        {
+          "name": "vault",
+          "writable": true,
+          "pda": {
+            "seeds": [
+              {
+                "kind": "const",
+                "value": [
+                  118,
+                  97,
+                  117,
+                  108,
+                  116
+                ]
+              },
+              {
+                "kind": "account",
+                "path": "match_account"
+              }
+            ]
+          }
+        },
+        {
+          "name": "attestor",
+          "signer": true
+        },
+        {
+          "name": "treasury",
+          "writable": true
+        }
+      ],
+      "args": [
+        {
+          "name": "args",
+          "type": {
+            "defined": {
+              "name": "PostOutcomeArgs"
+            }
+          }
+        }
+      ]
+    }
+  ],
+  "accounts": [
+    {
+      "name": "Match",
+      "discriminator": [
+        236,
+        63,
+        169,
+        38,
+        15,
+        56,
+        196,
+        162
+      ]
+    },
+    {
+      "name": "Vault",
+      "discriminator": [
+        211,
+        8,
+        232,
+        43,
+        2,
+        152,
+        117,
+        119
+      ]
+    }
+  ],
+  "errors": [
+    {
+      "code": 6000,
+      "name": "InvalidSeats",
+      "msg": "seats must be greater than zero"
+    },
+    {
+      "code": 6001,
+      "name": "TooManySeats",
+      "msg": "seats exceeds platform maximum"
+    },
+    {
+      "code": 6002,
+      "name": "SeatsOutOfGameRange",
+      "msg": "seats out of range registered by the game"
+    },
+    {
+      "code": 6003,
+      "name": "RakeTooHigh",
+      "msg": "rake_bps exceeds platform maximum"
+    },
+    {
+      "code": 6004,
+      "name": "DeadlinesOutOfOrder",
+      "msg": "funding_deadline must precede settlement_deadline"
+    },
+    {
+      "code": 6005,
+      "name": "NotJoinable",
+      "msg": "match is not in a joinable state"
+    },
+    {
+      "code": 6006,
+      "name": "MatchFull",
+      "msg": "match is already full"
+    },
+    {
+      "code": 6007,
+      "name": "AlreadyJoined",
+      "msg": "player has already joined this match"
+    },
+    {
+      "code": 6008,
+      "name": "NotSettleable",
+      "msg": "match is not in a settleable state (must be Live)"
+    },
+    {
+      "code": 6009,
+      "name": "UnsupportedModel",
+      "msg": "attestation model not supported by this instruction"
+    },
+    {
+      "code": 6010,
+      "name": "AttestorMismatch",
+      "msg": "signer does not match match.attestor"
+    },
+    {
+      "code": 6011,
+      "name": "TreasuryMismatch",
+      "msg": "treasury account does not match match.treasury"
+    },
+    {
+      "code": 6012,
+      "name": "PayoutMismatch",
+      "msg": "payout + rake does not equal pot"
+    },
+    {
+      "code": 6013,
+      "name": "InsufficientVault",
+      "msg": "vault has insufficient lamports for payout"
+    },
+    {
+      "code": 6014,
+      "name": "Overflow",
+      "msg": "arithmetic overflow"
+    },
+    {
+      "code": 6015,
+      "name": "WindowNotAllowed",
+      "msg": "challenge_window_secs must be 0 for this attestation model"
+    },
+    {
+      "code": 6016,
+      "name": "WindowRequired",
+      "msg": "challenge_window_secs must be > 0 for OPTIMISTIC"
+    },
+    {
+      "code": 6017,
+      "name": "NotFinalizable",
+      "msg": "match is not in a finalizable state (must be Settled)"
+    },
+    {
+      "code": 6018,
+      "name": "WinnerMismatch",
+      "msg": "winner account does not match the posted outcome"
+    },
+    {
+      "code": 6019,
+      "name": "ChallengeWindowOpen",
+      "msg": "challenge window has not yet expired"
+    },
+    {
+      "code": 6020,
+      "name": "OutcomeMissing",
+      "msg": "match has no outcome recorded"
+    },
+    {
+      "code": 6021,
+      "name": "InvalidWinners",
+      "msg": "winners count is invalid (must be 1..=MAX_SEATS)"
+    },
+    {
+      "code": 6022,
+      "name": "WinnersAccountsMismatch",
+      "msg": "remaining_accounts length does not match the winners list"
+    }
+  ],
+  "types": [
+    {
+      "name": "AttestationModel",
+      "type": {
+        "kind": "enum",
+        "variants": [
+          {
+            "name": "Trusted"
+          },
+          {
+            "name": "Cosigned"
+          },
+          {
+            "name": "Optimistic"
+          },
+          {
+            "name": "Zk"
+          }
+        ]
+      }
+    },
+    {
+      "name": "CreateMatchArgs",
+      "type": {
+        "kind": "struct",
+        "fields": [
+          {
+            "name": "nonce",
+            "type": "u64"
+          },
+          {
+            "name": "seats",
+            "type": "u8"
+          },
+          {
+            "name": "stake_per_seat",
+            "type": "u64"
+          },
+          {
+            "name": "rake_bps",
+            "type": "u16"
+          },
+          {
+            "name": "funding_deadline",
+            "type": "i64"
+          },
+          {
+            "name": "settlement_deadline",
+            "type": "i64"
+          },
+          {
+            "name": "model",
+            "type": {
+              "defined": {
+                "name": "AttestationModel"
+              }
+            }
+          },
+          {
+            "name": "attestor",
+            "docs": [
+              "Pubkey authorized to sign / submit the outcome for this match.",
+              "Must equal the registered Game's attestor_pubkey."
+            ],
+            "type": "pubkey"
+          },
+          {
+            "name": "treasury",
+            "docs": [
+              "Destination for the rake portion of the pot at settlement."
+            ],
+            "type": "pubkey"
+          },
+          {
+            "name": "challenge_window_secs",
+            "docs": [
+              "Seconds between `post_outcome` and earliest `finalize_match`.",
+              "Must be 0 for TRUSTED/COSIGNED (atomic settle+pay). For OPTIMISTIC, this",
+              "is the dispute window — anyone may challenge during this period (the",
+              "dispute path itself is not implemented in v0)."
+            ],
+            "type": "u32"
+          }
+        ]
+      }
+    },
+    {
+      "name": "Game",
+      "type": {
+        "kind": "struct",
+        "fields": [
+          {
+            "name": "dev_pubkey",
+            "type": "pubkey"
+          },
+          {
+            "name": "attestor_pubkey",
+            "type": "pubkey"
+          },
+          {
+            "name": "revenue_receiver",
+            "type": "pubkey"
+          },
+          {
+            "name": "simulator_sha256",
+            "type": {
+              "array": [
+                "u8",
+                32
+              ]
+            }
+          },
+          {
+            "name": "tier",
+            "type": {
+              "defined": {
+                "name": "Tier"
+              }
+            }
+          },
+          {
+            "name": "seats_min",
+            "type": "u8"
+          },
+          {
+            "name": "seats_max",
+            "type": "u8"
+          },
+          {
+            "name": "created_at",
+            "type": "i64"
+          },
+          {
+            "name": "id",
+            "type": "string"
+          },
+          {
+            "name": "bump",
+            "type": "u8"
+          }
+        ]
+      }
+    },
+    {
+      "name": "Match",
+      "type": {
+        "kind": "struct",
+        "fields": [
+          {
+            "name": "game_id",
+            "type": "pubkey"
+          },
+          {
+            "name": "nonce",
+            "type": "u64"
+          },
+          {
+            "name": "seats",
+            "type": "u8"
+          },
+          {
+            "name": "stake_per_seat",
+            "type": "u64"
+          },
+          {
+            "name": "rake_bps",
+            "type": "u16"
+          },
+          {
+            "name": "funding_deadline",
+            "type": "i64"
+          },
+          {
+            "name": "settlement_deadline",
+            "type": "i64"
+          },
+          {
+            "name": "model",
+            "type": {
+              "defined": {
+                "name": "AttestationModel"
+              }
+            }
+          },
+          {
+            "name": "state",
+            "type": {
+              "defined": {
+                "name": "MatchState"
+              }
+            }
+          },
+          {
+            "name": "creator",
+            "type": "pubkey"
+          },
+          {
+            "name": "attestor",
+            "type": "pubkey"
+          },
+          {
+            "name": "treasury",
+            "type": "pubkey"
+          },
+          {
+            "name": "outcome",
+            "type": {
+              "option": {
+                "defined": {
+                  "name": "MatchOutcome"
+                }
+              }
+            }
+          },
+          {
+            "name": "challenge_window_secs",
+            "docs": [
+              "Seconds between settle (`post_outcome`) and earliest finalize.",
+              "0 means atomic settle+pay (TRUSTED). >0 means dispute window (OPTIMISTIC)."
+            ],
+            "type": "u32"
+          },
+          {
+            "name": "settled_at",
+            "docs": [
+              "Unix timestamp at which `post_outcome` ran. 0 until the match is Settled."
+            ],
+            "type": "i64"
+          },
+          {
+            "name": "players",
+            "type": {
+              "vec": "pubkey"
+            }
+          },
+          {
+            "name": "bump",
+            "type": "u8"
+          },
+          {
+            "name": "vault_bump",
+            "type": "u8"
+          }
+        ]
+      }
+    },
+    {
+      "name": "MatchOutcome",
+      "type": {
+        "kind": "struct",
+        "fields": [
+          {
+            "name": "winners",
+            "type": {
+              "vec": {
+                "defined": {
+                  "name": "WinnerEntry"
+                }
+              }
+            }
+          },
+          {
+            "name": "rake",
+            "type": "u64"
+          },
+          {
+            "name": "replay_hash",
+            "type": {
+              "array": [
+                "u8",
+                32
+              ]
+            }
+          },
+          {
+            "name": "posted_at",
+            "type": "i64"
+          }
+        ]
+      }
+    },
+    {
+      "name": "MatchState",
+      "type": {
+        "kind": "enum",
+        "variants": [
+          {
+            "name": "Created"
+          },
+          {
+            "name": "Funded"
+          },
+          {
+            "name": "Live"
+          },
+          {
+            "name": "Settled"
+          },
+          {
+            "name": "Paid"
+          },
+          {
+            "name": "Expired"
+          },
+          {
+            "name": "Disputed"
+          },
+          {
+            "name": "Resolved"
+          }
+        ]
+      }
+    },
+    {
+      "name": "PostOutcomeArgs",
+      "type": {
+        "kind": "struct",
+        "fields": [
+          {
+            "name": "payouts",
+            "docs": [
+              "Payouts, in lamports, one per winner. Winner pubkeys are passed as",
+              "remaining_accounts in the same order."
+            ],
+            "type": {
+              "vec": "u64"
+            }
+          },
+          {
+            "name": "replay_hash",
+            "type": {
+              "array": [
+                "u8",
+                32
+              ]
+            }
+          }
+        ]
+      }
+    },
+    {
+      "name": "Tier",
+      "type": {
+        "kind": "enum",
+        "variants": [
+          {
+            "name": "Demo"
+          },
+          {
+            "name": "Live"
+          },
+          {
+            "name": "Featured"
+          }
+        ]
+      }
+    },
+    {
+      "name": "Vault",
+      "type": {
+        "kind": "struct",
+        "fields": [
+          {
+            "name": "match_account",
+            "type": "pubkey"
+          },
+          {
+            "name": "bump",
+            "type": "u8"
+          }
+        ]
+      }
+    },
+    {
+      "name": "WinnerEntry",
+      "type": {
+        "kind": "struct",
+        "fields": [
+          {
+            "name": "pubkey",
+            "type": "pubkey"
+          },
+          {
+            "name": "payout",
+            "type": "u64"
+          }
+        ]
+      }
+    }
+  ]
+}

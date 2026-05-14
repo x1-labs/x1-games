@@ -1,0 +1,76 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1200 780" font-family="-apple-system, BlinkMacSystemFont, 'Segoe UI', Inter, system-ui, sans-serif">
+  <defs>
+    <marker id="arrow" viewBox="0 0 12 12" refX="10" refY="6" markerWidth="9" markerHeight="9" orient="auto-start-reverse">
+      <path d="M0,0 L12,6 L0,12 z" fill="#4B5563"/>
+    </marker>
+    <marker id="arrow-soft" viewBox="0 0 12 12" refX="10" refY="6" markerWidth="9" markerHeight="9" orient="auto-start-reverse">
+      <path d="M0,0 L12,6 L0,12 z" fill="#9CA3AF"/>
+    </marker>
+  </defs>
+
+  <rect width="1200" height="780" fill="#FAFAFA"/>
+
+  <!-- Title -->
+  <text x="600" y="42" text-anchor="middle" font-size="22" font-weight="600" fill="#111827">x1-games — Architecture</text>
+  <text x="600" y="64" text-anchor="middle" font-size="13" fill="#6B7280">Settlement on-chain. Gameplay off-chain. Outcomes are signed messages.</text>
+
+  <!-- Game Client box -->
+  <rect x="350" y="100" width="500" height="140" rx="10" fill="#E8EEF7" stroke="#4A6FA5" stroke-width="2"/>
+  <text x="600" y="130" text-anchor="middle" font-size="18" font-weight="600" fill="#1F2937">Game Client</text>
+  <text x="600" y="150" text-anchor="middle" font-size="12" font-style="italic" fill="#4B5563">Pacman, chess, poker, racing, ...</text>
+  <text x="600" y="180" text-anchor="middle" font-size="13" fill="#1F2937">Renders, simulates, captures inputs</text>
+  <text x="600" y="200" text-anchor="middle" font-size="13" fill="#1F2937">Talks to platform via SDK</text>
+  <text x="600" y="220" text-anchor="middle" font-size="13" fill="#1F2937">Hosted in browser, app, or by an agent</text>
+
+  <!-- SDK arrows from Game Client down to services -->
+  <path d="M 480 240 L 300 398" stroke="#4B5563" stroke-width="2" fill="none" marker-end="url(#arrow)"/>
+  <path d="M 720 240 L 900 398" stroke="#4B5563" stroke-width="2" fill="none" marker-end="url(#arrow)"/>
+  <text x="340" y="320" font-size="12" font-weight="600" fill="#374151">SDK (TS)</text>
+  <text x="820" y="320" font-size="12" font-weight="600" fill="#374151">SDK (TS / Rust)</text>
+
+  <!-- Off-chain Services box -->
+  <rect x="60" y="400" width="480" height="320" rx="10" fill="#FBF1E1" stroke="#B8772A" stroke-width="2"/>
+  <text x="300" y="430" text-anchor="middle" font-size="18" font-weight="600" fill="#1F2937">Off-chain Services</text>
+  <text x="300" y="448" text-anchor="middle" font-size="11" fill="#6B7280">Trusted-but-verifiable infrastructure</text>
+  <line x1="100" y1="465" x2="500" y2="465" stroke="#B8772A" stroke-width="1" stroke-dasharray="2 3" opacity="0.45"/>
+
+  <text x="90" y="495" font-size="13" fill="#1F2937">• Matchmaking lobby</text>
+  <text x="90" y="520" font-size="13" fill="#1F2937">• Game server &amp; canonical simulator</text>
+  <text x="90" y="545" font-size="13" fill="#1F2937">• Replay storage</text>
+  <text x="90" y="570" font-size="13" fill="#1F2937">• Identity / sessions</text>
+  <text x="90" y="595" font-size="13" fill="#1F2937">• Attestor signers</text>
+  <text x="90" y="620" font-size="13" fill="#1F2937">• Indexer (events / leaderboards)</text>
+  <text x="90" y="645" font-size="13" fill="#1F2937">• MCP server for agent builders</text>
+
+  <!-- X1 Chain box -->
+  <rect x="660" y="400" width="480" height="320" rx="10" fill="#E3F1ED" stroke="#2E7D6B" stroke-width="2"/>
+  <text x="900" y="430" text-anchor="middle" font-size="18" font-weight="600" fill="#1F2937">X1 Chain (SVM)</text>
+  <text x="900" y="448" text-anchor="middle" font-size="11" fill="#6B7280">Monolithic L1 · 16–32 threads · sub-second finality</text>
+  <line x1="700" y1="465" x2="1100" y2="465" stroke="#2E7D6B" stroke-width="1" stroke-dasharray="2 3" opacity="0.45"/>
+
+  <rect x="685" y="480" width="430" height="68" rx="6" fill="#FFFFFF" stroke="#2E7D6B" stroke-width="1"/>
+  <text x="700" y="500" font-size="13" font-weight="600" fill="#1F2937">Match program</text>
+  <text x="700" y="519" font-size="12" fill="#374151">↳ Match PDA — per-match metadata</text>
+  <text x="700" y="538" font-size="12" fill="#374151">↳ Vault PDA — escrowed XNT</text>
+
+  <text x="700" y="578" font-size="13" font-weight="600" fill="#1F2937">Game registry program</text>
+  <text x="700" y="597" font-size="12" fill="#374151">↳ Game IDs, attestor keys, allowed models</text>
+
+  <text x="700" y="630" font-size="13" font-weight="600" fill="#1F2937">XP ledger program</text>
+  <text x="700" y="649" font-size="12" fill="#374151">↳ Soulbound, per-game balances</text>
+
+  <text x="700" y="682" font-size="13" font-weight="600" fill="#1F2937">Treasury / rake</text>
+  <text x="700" y="701" font-size="12" fill="#374151">↳ Funds house prize pools and grants</text>
+
+  <!-- Signed outcome arrow (off-chain -> chain) -->
+  <path d="M 540 555 L 660 555" stroke="#4B5563" stroke-width="2" fill="none" marker-end="url(#arrow)"/>
+  <text x="600" y="545" text-anchor="middle" font-size="12" font-weight="600" fill="#374151">signed outcome</text>
+  <text x="600" y="572" text-anchor="middle" font-size="10" font-style="italic" fill="#6B7280">trusted / cosigned / optimistic / zk</text>
+
+  <!-- Events arrow (chain -> off-chain) -->
+  <path d="M 660 620 L 540 620" stroke="#9CA3AF" stroke-width="1.5" fill="none" marker-end="url(#arrow-soft)" stroke-dasharray="4 3"/>
+  <text x="600" y="612" text-anchor="middle" font-size="11" fill="#6B7280">events</text>
+
+  <text x="1180" y="765" text-anchor="end" font-size="10" fill="#9CA3AF">x1-games whitepaper v0.3 — 2026-05-12</text>
+</svg>

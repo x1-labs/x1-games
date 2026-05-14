@@ -1,0 +1,28 @@
+{
+  "name": "@x1-labs/sample-tic-tac-toe",
+  "version": "0.0.0",
+  "private": true,
+  "description": "Sample game — tic-tac-toe — validating the X1 Games v0 integration contract end-to-end against the SDK stub",
+  "type": "module",
+  "main": "./src/index.ts",
+  "types": "./src/index.ts",
+  "exports": {
+    ".": "./src/index.ts"
+  },
+  "scripts": {
+    "dev": "bun run --hot src/index.ts",
+    "start": "bun run src/index.ts",
+    "test": "bun test",
+    "test:watch": "bun test --watch",
+    "typecheck": "tsc --noEmit",
+    "clean": "rm -rf dist .turbo"
+  },
+  "dependencies": {
+    "@x1-labs/games-protocol": "workspace:*",
+    "@x1-labs/games-sdk": "workspace:*"
+  },
+  "devDependencies": {
+    "@types/bun": "^1.1.13",
+    "typescript": "^5.6.3"
+  }
+}

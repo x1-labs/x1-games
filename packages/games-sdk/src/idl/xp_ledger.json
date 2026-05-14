@@ -1,0 +1,427 @@
+{
+  "address": "E4ccwzzHoLeziC4S7so55etspU6Ag6zrGNERKhSuaD74",
+  "metadata": {
+    "name": "xp_ledger",
+    "version": "0.0.1",
+    "spec": "0.1.0",
+    "description": "x1-games XP Ledger program — soulbound per-game progression"
+  },
+  "instructions": [
+    {
+      "name": "credit_xp",
+      "docs": [
+        "Credit XP to a participant of a settled match.",
+        "",
+        "Anyone may call this — the credit amount is deterministic from the",
+        "settled Match state. The CreditReceipt PDA enforces single-use: a",
+        "second call for the same (match, player) tuple fails on PDA re-init.",
+        "",
+        "Soulbound: the only mutation to XpBalance is increment via this path.",
+        "There is no burn, no transfer, no spend instruction in v0."
+      ],
+      "discriminator": [
+        118,
+        177,
+        70,
+        84,
+        75,
+        147,
+        173,
+        231
+      ],
+      "accounts": [
+        {
+          "name": "match_account",
+          "docs": [
+            "Settled Match account. Owned by match_program; Anchor validates that."
+          ]
+        },
+        {
+          "name": "player"
+        },
+        {
+          "name": "xp_balance",
+          "docs": [
+            "Running XP balance for (match.game_id, player). Initialized lazily."
+          ],
+          "writable": true,
+          "pda": {
+            "seeds": [
+              {
+                "kind": "const",
+                "value": [
+                  120,
+                  112
+                ]
+              },
+              {
+                "kind": "account",
+                "path": "match_account.game_id",
+                "account": "Match"
+              },
+              {
+                "kind": "account",
+                "path": "player"
+              }
+            ]
+          }
+        },
+        {
+          "name": "credit_receipt",
+          "docs": [
+            "Single-use credit receipt per (match, player). Re-init fails, which",
+            "is exactly the anti-double-credit guarantee."
+          ],
+          "writable": true,
+          "pda": {
+            "seeds": [
+              {
+                "kind": "const",
+                "value": [
+                  120,
+                  112,
+                  45,
+                  114,
+                  101,
+                  99,
+                  101,
+                  105,
+                  112,
+                  116
+                ]
+              },
+              {
+                "kind": "account",
+                "path": "match_account"
+              },
+              {
+                "kind": "account",
+                "path": "player"
+              }
+            ]
+          }
+        },
+        {
+          "name": "payer",
+          "writable": true,
+          "signer": true
+        },
+        {
+          "name": "system_program",
+          "address": "11111111111111111111111111111111"
+        }
+      ],
+      "args": []
+    }
+  ],
+  "accounts": [
+    {
+      "name": "CreditReceipt",
+      "discriminator": [
+        31,
+        53,
+        7,
+        19,
+        86,
+        202,
+        177,
+        108
+      ]
+    },
+    {
+      "name": "XpBalance",
+      "discriminator": [
+        236,
+        97,
+        185,
+        83,
+        122,
+        75,
+        84,
+        77
+      ]
+    }
+  ],
+  "errors": [
+    {
+      "code": 6000,
+      "name": "MatchNotSettled",
+      "msg": "match has not settled yet"
+    },
+    {
+      "code": 6001,
+      "name": "OutcomeMissing",
+      "msg": "match has no outcome recorded"
+    },
+    {
+      "code": 6002,
+      "name": "NotAParticipant",
+      "msg": "player is not a participant in this match"
+    },
+    {
+      "code": 6003,
+      "name": "Overflow",
+      "msg": "arithmetic overflow"
+    }
+  ],
+  "types": [
+    {
+      "name": "AttestationModel",
+      "type": {
+        "kind": "enum",
+        "variants": [
+          {
+            "name": "Trusted"
+          },
+          {
+            "name": "Cosigned"
+          },
+          {
+            "name": "Optimistic"
+          },
+          {
+            "name": "Zk"
+          }
+        ]
+      }
+    },
+    {
+      "name": "CreditReceipt",
+      "type": {
+        "kind": "struct",
+        "fields": [
+          {
+            "name": "match_account",
+            "type": "pubkey"
+          },
+          {
+            "name": "player",
+            "type": "pubkey"
+          },
+          {
+            "name": "amount",
+            "type": "u64"
+          },
+          {
+            "name": "credited_at",
+            "type": "i64"
+          },
+          {
+            "name": "bump",
+            "type": "u8"
+          }
+        ]
+      }
+    },
+    {
+      "name": "Match",
+      "type": {
+        "kind": "struct",
+        "fields": [
+          {
+            "name": "game_id",
+            "type": "pubkey"
+          },
+          {
+            "name": "nonce",
+            "type": "u64"
+          },
+          {
+            "name": "seats",
+            "type": "u8"
+          },
+          {
+            "name": "stake_per_seat",
+            "type": "u64"
+          },
+          {
+            "name": "rake_bps",
+            "type": "u16"
+          },
+          {
+            "name": "funding_deadline",
+            "type": "i64"
+          },
+          {
+            "name": "settlement_deadline",
+            "type": "i64"
+          },
+          {
+            "name": "model",
+            "type": {
+              "defined": {
+                "name": "AttestationModel"
+              }
+            }
+          },
+          {
+            "name": "state",
+            "type": {
+              "defined": {
+                "name": "MatchState"
+              }
+            }
+          },
+          {
+            "name": "creator",
+            "type": "pubkey"
+          },
+          {
+            "name": "attestor",
+            "type": "pubkey"
+          },
+          {
+            "name": "treasury",
+            "type": "pubkey"
+          },
+          {
+            "name": "outcome",
+            "type": {
+              "option": {
+                "defined": {
+                  "name": "MatchOutcome"
+                }
+              }
+            }
+          },
+          {
+            "name": "challenge_window_secs",
+            "docs": [
+              "Seconds between settle (`post_outcome`) and earliest finalize.",
+              "0 means atomic settle+pay (TRUSTED). >0 means dispute window (OPTIMISTIC)."
+            ],
+            "type": "u32"
+          },
+          {
+            "name": "settled_at",
+            "docs": [
+              "Unix timestamp at which `post_outcome` ran. 0 until the match is Settled."
+            ],
+            "type": "i64"
+          },
+          {
+            "name": "players",
+            "type": {
+              "vec": "pubkey"
+            }
+          },
+          {
+            "name": "bump",
+            "type": "u8"
+          },
+          {
+            "name": "vault_bump",
+            "type": "u8"
+          }
+        ]
+      }
+    },
+    {
+      "name": "MatchOutcome",
+      "type": {
+        "kind": "struct",
+        "fields": [
+          {
+            "name": "winners",
+            "type": {
+              "vec": {
+                "defined": {
+                  "name": "WinnerEntry"
+                }
+              }
+            }
+          },
+          {
+            "name": "rake",
+            "type": "u64"
+          },
+          {
+            "name": "replay_hash",
+            "type": {
+              "array": [
+                "u8",
+                32
+              ]
+            }
+          },
+          {
+            "name": "posted_at",
+            "type": "i64"
+          }
+        ]
+      }
+    },
+    {
+      "name": "MatchState",
+      "type": {
+        "kind": "enum",
+        "variants": [
+          {
+            "name": "Created"
+          },
+          {
+            "name": "Funded"
+          },
+          {
+            "name": "Live"
+          },
+          {
+            "name": "Settled"
+          },
+          {
+            "name": "Paid"
+          },
+          {
+            "name": "Expired"
+          },
+          {
+            "name": "Disputed"
+          },
+          {
+            "name": "Resolved"
+          }
+        ]
+      }
+    },
+    {
+      "name": "WinnerEntry",
+      "type": {
+        "kind": "struct",
+        "fields": [
+          {
+            "name": "pubkey",
+            "type": "pubkey"
+          },
+          {
+            "name": "payout",
+            "type": "u64"
+          }
+        ]
+      }
+    },
+    {
+      "name": "XpBalance",
+      "type": {
+        "kind": "struct",
+        "fields": [
+          {
+            "name": "game",
+            "type": "pubkey"
+          },
+          {
+            "name": "player",
+            "type": "pubkey"
+          },
+          {
+            "name": "amount",
+            "type": "u64"
+          },
+          {
+            "name": "bump",
+            "type": "u8"
+          }
+        ]
+      }
+    }
+  ]
+}

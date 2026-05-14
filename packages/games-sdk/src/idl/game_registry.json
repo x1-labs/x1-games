@@ -1,0 +1,219 @@
+{
+  "address": "92NzjeGS2kEuLw53vAvox6eFdNfT2VoSTrSX4uGTHKbS",
+  "metadata": {
+    "name": "game_registry",
+    "version": "0.0.1",
+    "spec": "0.1.0",
+    "description": "x1-games Game Registry program — game IDs, attestor keys, allowed models"
+  },
+  "instructions": [
+    {
+      "name": "register_game",
+      "discriminator": [
+        122,
+        44,
+        95,
+        58,
+        89,
+        33,
+        40,
+        59
+      ],
+      "accounts": [
+        {
+          "name": "game",
+          "writable": true,
+          "pda": {
+            "seeds": [
+              {
+                "kind": "const",
+                "value": [
+                  103,
+                  97,
+                  109,
+                  101
+                ]
+              },
+              {
+                "kind": "arg",
+                "path": "args.id"
+              }
+            ]
+          }
+        },
+        {
+          "name": "dev",
+          "writable": true,
+          "signer": true
+        },
+        {
+          "name": "system_program",
+          "address": "11111111111111111111111111111111"
+        }
+      ],
+      "args": [
+        {
+          "name": "args",
+          "type": {
+            "defined": {
+              "name": "RegisterGameArgs"
+            }
+          }
+        }
+      ]
+    }
+  ],
+  "accounts": [
+    {
+      "name": "Game",
+      "discriminator": [
+        27,
+        90,
+        166,
+        125,
+        74,
+        100,
+        121,
+        18
+      ]
+    }
+  ],
+  "errors": [
+    {
+      "code": 6000,
+      "name": "InvalidIdLength",
+      "msg": "game id length must be 3-32 chars"
+    },
+    {
+      "code": 6001,
+      "name": "InvalidIdCharset",
+      "msg": "game id must match [a-z0-9-]+"
+    },
+    {
+      "code": 6002,
+      "name": "InvalidSeats",
+      "msg": "seats_min must be > 0 and <= seats_max"
+    }
+  ],
+  "types": [
+    {
+      "name": "Game",
+      "type": {
+        "kind": "struct",
+        "fields": [
+          {
+            "name": "dev_pubkey",
+            "type": "pubkey"
+          },
+          {
+            "name": "attestor_pubkey",
+            "type": "pubkey"
+          },
+          {
+            "name": "revenue_receiver",
+            "type": "pubkey"
+          },
+          {
+            "name": "simulator_sha256",
+            "type": {
+              "array": [
+                "u8",
+                32
+              ]
+            }
+          },
+          {
+            "name": "tier",
+            "type": {
+              "defined": {
+                "name": "Tier"
+              }
+            }
+          },
+          {
+            "name": "seats_min",
+            "type": "u8"
+          },
+          {
+            "name": "seats_max",
+            "type": "u8"
+          },
+          {
+            "name": "created_at",
+            "type": "i64"
+          },
+          {
+            "name": "id",
+            "type": "string"
+          },
+          {
+            "name": "bump",
+            "type": "u8"
+          }
+        ]
+      }
+    },
+    {
+      "name": "RegisterGameArgs",
+      "type": {
+        "kind": "struct",
+        "fields": [
+          {
+            "name": "id",
+            "type": "string"
+          },
+          {
+            "name": "attestor_pubkey",
+            "type": "pubkey"
+          },
+          {
+            "name": "revenue_receiver",
+            "type": "pubkey"
+          },
+          {
+            "name": "simulator_sha256",
+            "type": {
+              "array": [
+                "u8",
+                32
+              ]
+            }
+          },
+          {
+            "name": "tier",
+            "type": {
+              "defined": {
+                "name": "Tier"
+              }
+            }
+          },
+          {
+            "name": "seats_min",
+            "type": "u8"
+          },
+          {
+            "name": "seats_max",
+            "type": "u8"
+          }
+        ]
+      }
+    },
+    {
+      "name": "Tier",
+      "type": {
+        "kind": "enum",
+        "variants": [
+          {
+            "name": "Demo"
+          },
+          {
+            "name": "Live"
+          },
+          {
+            "name": "Featured"
+          }
+        ]
+      }
+    }
+  ]
+}

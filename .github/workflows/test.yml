@@ -1,0 +1,125 @@
+name: test
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+    branches: [main]
+  workflow_dispatch:
+
+# Cancel in-progress runs of the same branch on new pushes.
+concurrency:
+  group: ${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  # -------------------------------------------------------------------------
+  # Off-chain workspaces. Fast (<1 min wall) and independent of any chain
+  # toolchain — runs even if onchain is broken.
+  # -------------------------------------------------------------------------
+  offchain:
+    name: off-chain (bun)
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Setup Bun
+        uses: oven-sh/setup-bun@v2
+        with:
+          bun-version: 1.2.21
+
+      - name: Install workspace deps
+        run: bun install --frozen-lockfile
+
+      - name: Test — games-protocol
+        run: bun test
+        working-directory: packages/games-protocol
+
+      - name: Test — games-sdk
+        run: bun test
+        working-directory: packages/games-sdk
+
+      - name: Test — services
+        run: bun test
+        working-directory: apps/services
+
+      - name: Test — tic-tac-toe
+        run: bun test
+        working-directory: apps/sample-games/tic-tac-toe
+
+  # -------------------------------------------------------------------------
+  # On-chain workspace. Installs Agave (Solana), Anchor, and surfpool, then
+  # runs `anchor test` against the deployed programs via the local validator.
+  # Cargo builds are cached; Agave install is fresh per run (~30s) for
+  # simplicity. Cold first run: 15+ min. Warm runs: ~5 min.
+  # -------------------------------------------------------------------------
+  onchain:
+    name: on-chain (anchor)
+    runs-on: ubuntu-latest
+    timeout-minutes: 45
+    env:
+      AGAVE_VERSION: 3.1.14
+      ANCHOR_VERSION: 1.0.2
+      SURFPOOL_VERSION: 1.0.0
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Setup Bun
+        uses: oven-sh/setup-bun@v2
+        with:
+          bun-version: 1.2.21
+
+      - name: Setup Rust
+        uses: dtolnay/rust-toolchain@stable
+
+      - name: Cache Cargo registry + chain target
+        uses: Swatinem/rust-cache@v2
+        with:
+          workspaces: chain
+          shared-key: chain-${{ runner.os }}
+
+      - name: Install Agave (Solana)
+        run: sh -c "$(curl -sSfL https://release.anza.xyz/v${AGAVE_VERSION}/install)"
+
+      - name: Add Agave to PATH
+        run: echo "$HOME/.local/share/solana/install/active_release/bin" >> $GITHUB_PATH
+
+      - name: Install avm + Anchor
+        run: |
+          cargo install --git https://github.com/coral-xyz/anchor --tag v${ANCHOR_VERSION} avm --force
+          avm install ${ANCHOR_VERSION}
+          avm use ${ANCHOR_VERSION}
+
+      - name: Install surfpool
+        run: cargo install --git https://github.com/txtx/surfpool --tag v${SURFPOOL_VERSION} surfpool
+
+      - name: Verify toolchain
+        run: |
+          bun --version
+          rustc --version
+          solana --version
+          anchor --version
+          surfpool --version
+
+      - name: Install workspace deps
+        run: bun install --frozen-lockfile
+
+      - name: Generate a CI-local Solana keypair
+        run: |
+          mkdir -p ~/.config/solana
+          solana-keygen new --no-bip39-passphrase --silent --outfile ~/.config/solana/id.json
+
+      - name: Anchor build
+        run: anchor build
+        working-directory: chain
+
+      - name: Refresh SDK IDLs from build artifacts
+        run: |
+          cp chain/target/idl/match_program.json packages/games-sdk/src/idl/
+          cp chain/target/idl/game_registry.json packages/games-sdk/src/idl/
+          cp chain/target/idl/xp_ledger.json packages/games-sdk/src/idl/
+
+      - name: Anchor test
+        run: anchor test --skip-build
+        working-directory: chain

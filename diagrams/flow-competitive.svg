@@ -1,0 +1,178 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1280 980" font-family="-apple-system, BlinkMacSystemFont, 'Segoe UI', Inter, system-ui, sans-serif">
+  <defs>
+    <marker id="arr" viewBox="0 0 12 12" refX="11" refY="6" markerWidth="9" markerHeight="9" orient="auto-start-reverse">
+      <path d="M0,0 L12,6 L0,12 z" fill="#374151"/>
+    </marker>
+    <marker id="arr-soft" viewBox="0 0 12 12" refX="11" refY="6" markerWidth="9" markerHeight="9" orient="auto-start-reverse">
+      <path d="M0,0 L12,6 L0,12 z" fill="#9CA3AF"/>
+    </marker>
+    <marker id="arr-green" viewBox="0 0 12 12" refX="11" refY="6" markerWidth="9" markerHeight="9" orient="auto-start-reverse">
+      <path d="M0,0 L12,6 L0,12 z" fill="#2E7D6B"/>
+    </marker>
+  </defs>
+
+  <rect width="1280" height="980" fill="#FAFAFA"/>
+
+  <!-- Title -->
+  <text x="640" y="38" text-anchor="middle" font-size="22" font-weight="600" fill="#111827">Competitive Game Flow — Two-Seat PvP Match</text>
+  <text x="640" y="60" text-anchor="middle" font-size="13" fill="#6B7280">COSIGNED attestation. Both players sign the outcome. Stake 5 XNT each (pot 10), rake 3%.</text>
+
+  <!-- Lane backgrounds -->
+  <rect x="40"   y="80" width="240" height="860" fill="#FDF7EC"/>
+  <rect x="280"  y="80" width="240" height="860" fill="#FDF7EC"/>
+  <rect x="520"  y="80" width="360" height="860" fill="#FDF7EC"/>
+  <rect x="880"  y="80" width="360" height="860" fill="#EFF8F4"/>
+
+  <!-- Lane header strips -->
+  <rect x="40"  y="80" width="240" height="44" fill="#FBF1E1" stroke="#B8772A" stroke-width="1.5"/>
+  <rect x="280" y="80" width="240" height="44" fill="#FBF1E1" stroke="#B8772A" stroke-width="1.5"/>
+  <rect x="520" y="80" width="360" height="44" fill="#FBF1E1" stroke="#B8772A" stroke-width="1.5"/>
+  <rect x="880" y="80" width="360" height="44" fill="#E3F1ED" stroke="#2E7D6B" stroke-width="1.5"/>
+
+  <text x="160"  y="103" text-anchor="middle" font-size="14" font-weight="600" fill="#1F2937">Player A</text>
+  <text x="160"  y="119" text-anchor="middle" font-size="11" fill="#6B7280">wallet · off-chain</text>
+  <text x="400"  y="103" text-anchor="middle" font-size="14" font-weight="600" fill="#1F2937">Player B</text>
+  <text x="400"  y="119" text-anchor="middle" font-size="11" fill="#6B7280">wallet · off-chain</text>
+  <text x="700"  y="103" text-anchor="middle" font-size="14" font-weight="600" fill="#1F2937">Off-chain Services</text>
+  <text x="700"  y="119" text-anchor="middle" font-size="11" fill="#6B7280">matchmaker · game session · indexer</text>
+  <text x="1060" y="103" text-anchor="middle" font-size="14" font-weight="600" fill="#1F2937">X1 Chain</text>
+  <text x="1060" y="119" text-anchor="middle" font-size="11" fill="#6B7280">Match / Vault / XP / Treasury — on-chain</text>
+
+  <!-- Lifelines -->
+  <line x1="160"  y1="124" x2="160"  y2="940" stroke="#B8772A" stroke-width="1" stroke-dasharray="3 4" opacity="0.5"/>
+  <line x1="400"  y1="124" x2="400"  y2="940" stroke="#B8772A" stroke-width="1" stroke-dasharray="3 4" opacity="0.5"/>
+  <line x1="700"  y1="124" x2="700"  y2="940" stroke="#B8772A" stroke-width="1" stroke-dasharray="3 4" opacity="0.5"/>
+  <line x1="1060" y1="124" x2="1060" y2="940" stroke="#2E7D6B" stroke-width="1" stroke-dasharray="3 4" opacity="0.55"/>
+
+  <!-- =================================================================== -->
+  <!-- Step 1: A → Services : findMatch -->
+  <g>
+    <circle cx="160" cy="160" r="11" fill="#374151"/>
+    <text x="160" y="164" text-anchor="middle" font-size="11" font-weight="700" fill="#FFFFFF">1</text>
+    <line x1="174" y1="160" x2="686" y2="160" stroke="#374151" stroke-width="1.8" marker-end="url(#arr)"/>
+    <text x="430" y="153" text-anchor="middle" font-size="12" fill="#1F2937">findMatch(game="chess", stake=5)</text>
+  </g>
+
+  <!-- Step 2: B → Services : findMatch -->
+  <g>
+    <circle cx="400" cy="210" r="11" fill="#374151"/>
+    <text x="400" y="214" text-anchor="middle" font-size="11" font-weight="700" fill="#FFFFFF">2</text>
+    <line x1="414" y1="210" x2="686" y2="210" stroke="#374151" stroke-width="1.8" marker-end="url(#arr)"/>
+    <text x="550" y="203" text-anchor="middle" font-size="12" fill="#1F2937">findMatch(game="chess", stake=5)</text>
+  </g>
+
+  <!-- Step 3: Services self : pair -->
+  <g>
+    <circle cx="700" cy="260" r="11" fill="#374151"/>
+    <text x="700" y="264" text-anchor="middle" font-size="11" font-weight="700" fill="#FFFFFF">3</text>
+    <path d="M 700 260 q 70 0 70 18 q 0 18 -70 18" fill="none" stroke="#374151" stroke-width="1.8" marker-end="url(#arr)"/>
+    <text x="786" y="283" font-size="11" fill="#1F2937">matchmaker pairs A &amp; B</text>
+  </g>
+
+  <!-- Step 4: Services → Chain : createMatch -->
+  <g>
+    <circle cx="700" cy="320" r="11" fill="#2E7D6B"/>
+    <text x="700" y="324" text-anchor="middle" font-size="11" font-weight="700" fill="#FFFFFF">4</text>
+    <line x1="714" y1="320" x2="1046" y2="320" stroke="#2E7D6B" stroke-width="1.8" marker-end="url(#arr-green)"/>
+    <text x="880" y="313" text-anchor="middle" font-size="12" font-weight="500" fill="#1F2937">createMatch(seats=2, stake=5, COSIGNED, [A,B])</text>
+    <text x="880" y="336" text-anchor="middle" font-size="10" font-style="italic" fill="#2E7D6B">tx · Match PDA + Vault PDA created (empty)</text>
+  </g>
+
+  <!-- Step 5: Services → both Players : prompt deposit (two arrows) -->
+  <g>
+    <circle cx="700" cy="380" r="11" fill="#374151"/>
+    <text x="700" y="384" text-anchor="middle" font-size="11" font-weight="700" fill="#FFFFFF">5</text>
+    <line x1="686" y1="380" x2="174" y2="380" stroke="#374151" stroke-width="1.8" marker-end="url(#arr)"/>
+    <line x1="686" y1="394" x2="414" y2="394" stroke="#374151" stroke-width="1.8" marker-end="url(#arr)"/>
+    <text x="430" y="373" text-anchor="middle" font-size="12" fill="#1F2937">prompt both: sign joinMatch deposit tx</text>
+  </g>
+
+  <!-- Step 6: A → Chain : deposit -->
+  <g>
+    <circle cx="160" cy="430" r="11" fill="#2E7D6B"/>
+    <text x="160" y="434" text-anchor="middle" font-size="11" font-weight="700" fill="#FFFFFF">6</text>
+    <line x1="174" y1="430" x2="1046" y2="430" stroke="#2E7D6B" stroke-width="1.8" marker-end="url(#arr-green)"/>
+    <text x="610" y="423" text-anchor="middle" font-size="12" font-weight="500" fill="#1F2937">joinMatch — A deposits 5 XNT to Vault PDA</text>
+  </g>
+
+  <!-- Step 7: B → Chain : deposit -->
+  <g>
+    <circle cx="400" cy="475" r="11" fill="#2E7D6B"/>
+    <text x="400" y="479" text-anchor="middle" font-size="11" font-weight="700" fill="#FFFFFF">7</text>
+    <line x1="414" y1="475" x2="1046" y2="475" stroke="#2E7D6B" stroke-width="1.8" marker-end="url(#arr-green)"/>
+    <text x="730" y="468" text-anchor="middle" font-size="12" font-weight="500" fill="#1F2937">joinMatch — B deposits 5 XNT to Vault PDA</text>
+  </g>
+
+  <!-- On-chain state note: LIVE (pot = 10) -->
+  <g>
+    <rect x="912" y="495" width="296" height="22" rx="4" fill="#E3F1ED" stroke="#2E7D6B" stroke-width="1"/>
+    <text x="1060" y="510" text-anchor="middle" font-size="11" font-weight="600" fill="#1F2937">Match → LIVE · pot = 10 XNT</text>
+  </g>
+
+  <!-- Step 8: Play loop block spanning A, B, Services -->
+  <g>
+    <rect x="80" y="530" width="780" height="82" rx="8" fill="#FBF1E1" stroke="#B8772A" stroke-width="1.5" stroke-dasharray="5 3"/>
+    <circle cx="100" cy="550" r="11" fill="#374151"/>
+    <text x="100" y="554" text-anchor="middle" font-size="11" font-weight="700" fill="#FFFFFF">8</text>
+    <text x="470" y="555" text-anchor="middle" font-size="13" font-weight="600" fill="#1F2937">play loop (off-chain · turn-based, both clients see full state)</text>
+    <text x="470" y="575" text-anchor="middle" font-size="11" fill="#374151">A's client ⇄ Game Session ⇄ B's client — moves relayed, both sides verify locally</text>
+    <text x="470" y="595" text-anchor="middle" font-size="11" fill="#374151">Idle-timeout enforced: if a player goes silent, the present player can claim forfeit</text>
+  </g>
+
+  <!-- Step 9: Services → both : outcome proposed -->
+  <g>
+    <circle cx="700" cy="640" r="11" fill="#9CA3AF"/>
+    <text x="700" y="644" text-anchor="middle" font-size="11" font-weight="700" fill="#FFFFFF">9</text>
+    <line x1="686" y1="640" x2="174" y2="640" stroke="#9CA3AF" stroke-width="1.6" marker-end="url(#arr-soft)" stroke-dasharray="5 3"/>
+    <line x1="686" y1="654" x2="414" y2="654" stroke="#9CA3AF" stroke-width="1.6" marker-end="url(#arr-soft)" stroke-dasharray="5 3"/>
+    <text x="430" y="633" text-anchor="middle" font-size="11" font-style="italic" fill="#6B7280">game ends · outcome proposed: "A wins"</text>
+  </g>
+
+  <!-- Step 10: A and B → Services : co-sign -->
+  <g>
+    <circle cx="160" cy="700" r="11" fill="#374151"/>
+    <text x="160" y="704" text-anchor="middle" font-size="11" font-weight="700" fill="#FFFFFF">10</text>
+    <line x1="174" y1="700" x2="686" y2="700" stroke="#374151" stroke-width="1.8" marker-end="url(#arr)"/>
+    <line x1="414" y1="714" x2="686" y2="714" stroke="#374151" stroke-width="1.8" marker-end="url(#arr)"/>
+    <text x="450" y="693" text-anchor="middle" font-size="12" font-weight="500" fill="#1F2937">co-sign outcome — sig_A, sig_B</text>
+    <text x="450" y="731" text-anchor="middle" font-size="10" font-style="italic" fill="#6B7280">each player's wallet signs the agreed result</text>
+  </g>
+
+  <!-- Step 11: Services → Chain : post_outcome with both sigs -->
+  <g>
+    <circle cx="700" cy="765" r="11" fill="#2E7D6B"/>
+    <text x="700" y="769" text-anchor="middle" font-size="11" font-weight="700" fill="#FFFFFF">11</text>
+    <line x1="714" y1="765" x2="1046" y2="765" stroke="#2E7D6B" stroke-width="1.8" marker-end="url(#arr-green)"/>
+    <text x="880" y="758" text-anchor="middle" font-size="12" font-weight="500" fill="#1F2937">post_outcome(winner=A, [sig_A, sig_B], replayHash)</text>
+    <text x="880" y="781" text-anchor="middle" font-size="10" font-style="italic" fill="#2E7D6B">tx</text>
+  </g>
+
+  <!-- Step 12: Chain self : verify + finalize -->
+  <g>
+    <circle cx="1060" cy="815" r="11" fill="#2E7D6B"/>
+    <text x="1060" y="819" text-anchor="middle" font-size="11" font-weight="700" fill="#FFFFFF">12</text>
+    <path d="M 1060 815 q 70 0 70 18 q 0 18 -70 18" fill="none" stroke="#2E7D6B" stroke-width="1.8" marker-end="url(#arr-green)"/>
+    <text x="1146" y="838" font-size="11" fill="#1F2937">verify both sigs · finalize</text>
+  </g>
+
+  <!-- Step 13: Chain → winner (A) : payout (and side note rake + XP) -->
+  <g>
+    <circle cx="1060" cy="885" r="11" fill="#2E7D6B"/>
+    <text x="1060" y="889" text-anchor="middle" font-size="11" font-weight="700" fill="#FFFFFF">13</text>
+    <line x1="1046" y1="885" x2="174" y2="885" stroke="#2E7D6B" stroke-width="1.8" marker-end="url(#arr-green)"/>
+    <text x="600" y="878" text-anchor="middle" font-size="12" font-weight="600" fill="#1F2937">payout 9.7 XNT to A (pot 10 − 3% rake)</text>
+    <text x="600" y="900" text-anchor="middle" font-size="10" font-style="italic" fill="#2E7D6B">atomic: + 0.3 XNT rake to Treasury · + XP to both (winner more)</text>
+  </g>
+
+  <!-- Legend (bottom) -->
+  <g>
+    <line x1="60" y1="965" x2="86" y2="965" stroke="#2E7D6B" stroke-width="1.8"/>
+    <text x="92" y="969" font-size="10" fill="#6B7280">on-chain tx</text>
+    <line x1="172" y1="965" x2="198" y2="965" stroke="#374151" stroke-width="1.8"/>
+    <text x="204" y="969" font-size="10" fill="#6B7280">off-chain message</text>
+    <line x1="298" y1="965" x2="324" y2="965" stroke="#9CA3AF" stroke-width="1.6" stroke-dasharray="5 3"/>
+    <text x="330" y="969" font-size="10" fill="#6B7280">event / async return</text>
+    <text x="1238" y="969" text-anchor="end" font-size="10" fill="#9CA3AF">x1-games whitepaper v0.3 — 2026-05-12</text>
+  </g>
+</svg>

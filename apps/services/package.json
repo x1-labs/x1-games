@@ -1,0 +1,30 @@
+{
+  "name": "@x1-labs/games-services",
+  "version": "0.0.0",
+  "private": true,
+  "description": "X1 Games off-chain services — tRPC API, matchmaker, attestor, indexer",
+  "type": "module",
+  "main": "./src/index.ts",
+  "exports": {
+    ".": "./src/index.ts"
+  },
+  "scripts": {
+    "dev": "bun run --hot src/main.ts",
+    "start": "bun run src/main.ts",
+    "test": "bun test",
+    "test:watch": "bun test --watch",
+    "typecheck": "tsc --noEmit",
+    "clean": "rm -rf dist .turbo"
+  },
+  "dependencies": {
+    "@solana/web3.js": "^1.95.4",
+    "@trpc/server": "^11.0.0-rc.660",
+    "@x1-labs/games-sdk": "workspace:*",
+    "hono": "^4.6.10",
+    "zod": "^3.23.8"
+  },
+  "devDependencies": {
+    "@types/bun": "^1.1.13",
+    "typescript": "^5.6.3"
+  }
+}

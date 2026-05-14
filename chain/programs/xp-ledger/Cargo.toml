@@ -1,0 +1,21 @@
+[package]
+name = "xp-ledger"
+version = "0.0.1"
+description = "x1-games XP Ledger program — soulbound per-game progression"
+edition = "2021"
+
+[lib]
+crate-type = ["cdylib", "lib"]
+name = "xp_ledger"
+
+[features]
+default = []
+cpi = ["no-entrypoint"]
+no-entrypoint = []
+no-idl = []
+no-log-ix-name = []
+idl-build = ["anchor-lang/idl-build"]
+
+[dependencies]
+anchor-lang = { version = "1.0.2", features = ["init-if-needed"] }
+match-program = { path = "../match", features = ["no-entrypoint"] }
