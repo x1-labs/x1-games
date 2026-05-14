@@ -160,6 +160,10 @@ export interface MatchView {
   attestorPubkey: Pubkey;
   /** Deterministic, derived from matchId. Used for in-game RNG. */
   seed: string;
+  /** Dispute window in seconds (0 for TRUSTED/COSIGNED). */
+  challengeWindowSecs: number;
+  /** Unix sec the outcome was posted. 0 until Settled. */
+  settledAt: number;
   outcome?: OutcomeBody;
 }
 
@@ -305,6 +309,8 @@ export class StubBackend {
       model: m.model,
       attestorPubkey: m.attestorPubkey,
       seed,
+      challengeWindowSecs: m.challengeWindowSecs,
+      settledAt: m.settledAt,
       outcome: m.outcome,
     };
   }
@@ -451,6 +457,8 @@ export class StubBackend {
       model: m.model,
       attestorPubkey: m.attestorPubkey,
       seed,
+      challengeWindowSecs: m.challengeWindowSecs,
+      settledAt: m.settledAt,
       outcome: m.outcome,
     };
   }

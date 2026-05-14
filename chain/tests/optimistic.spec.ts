@@ -116,24 +116,33 @@ describe("OPTIMISTIC attestation — end-to-end", () => {
   });
 
   it("finalize after window pays out and transitions to Paid", async function () {
-    this.timeout(60_000);
+    this.timeout(120_000);
     const { devPlatform, matchId, player, treasury, playerBefore, treasuryBefore, expectedPayout, expectedRake } =
       await settledOptimisticMatch({ challengeWindowSecs: 1 });
 
-    // surfpool's slot-derived clock can lag wall time. Poll the chain's
-    // reported block time until it has clearly passed the window, rather than
-    // betting on a fixed wall-time sleep.
-    const slot0 = await provider.connection.getSlot();
-    const t0 = (await provider.connection.getBlockTime(slot0)) ?? Math.floor(Date.now() / 1000);
-    const deadline = t0 + 1 + 3; // window + headroom
-    for (let i = 0; i < 60; i++) {
-      const slot = await provider.connection.getSlot();
-      const t = (await provider.connection.getBlockTime(slot)) ?? 0;
-      if (t >= deadline) break;
-      await sleep(500);
-    }
+    const settled = await devPlatform.getMatch(matchId);
+    expect(settled.state).to.equal("Settled");
+    expect(settled.settledAt).to.be.greaterThan(0);
 
-    await devPlatform.finalizeMatch({ matchId });
+    // Retry finalize until the chain's own clock check passes. The chain is
+    // the source of truth for when the window has elapsed; we let it tell us
+    // rather than guessing from getBlockTime (which surfpool can return null
+    // for) or wall time (which can drift relative to the slot clock).
+    const start = Date.now();
+    let finalized = false;
+    let lastError: unknown;
+    while (Date.now() - start < 90_000) {
+      try {
+        await devPlatform.finalizeMatch({ matchId });
+        finalized = true;
+        break;
+      } catch (e) {
+        lastError = e;
+        if (!String(e).match(/ChallengeWindowOpen/)) throw e; // unexpected — surface immediately
+        await sleep(500);
+      }
+    }
+    expect(finalized, `finalize never landed: ${String(lastError)}`).to.equal(true);
     const paid = await devPlatform.getMatch(matchId);
     expect(paid.state).to.equal("Paid");
 

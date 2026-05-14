@@ -511,6 +511,8 @@ export class SolanaBackend {
       model: decodeModel(m.model),
       attestorPubkey: m.attestor.toBase58(),
       seed,
+      challengeWindowSecs: m.challengeWindowSecs,
+      settledAt: m.settledAt.toNumber(),
       outcome,
     };
   }
