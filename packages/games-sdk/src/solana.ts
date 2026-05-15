@@ -5,8 +5,12 @@
 // and the chain has no event-push for now.
 
 import { createHash } from "node:crypto";
-import anchor from "@coral-xyz/anchor";
-import web3 from "@solana/web3.js";
+// Use namespace imports — both packages publish browser ESM bundles with no
+// synthetic `default` export, so `import x from ...` only works under Node's
+// CJS interop and breaks `bun build --target browser`. The chain tests had
+// to normalize the same way (see commit 237be0c).
+import * as anchor from "@coral-xyz/anchor";
+import * as web3 from "@solana/web3.js";
 import {
   MatchStart,
   OutcomeBody,

@@ -4,7 +4,7 @@
 // chain backends, used as a stable pubkey for the stub) and routes calls to
 // the backend selected by `network`.
 
-import web3 from "@solana/web3.js";
+import * as web3 from "@solana/web3.js";
 import type {
   GameRegistration,
   MatchStart,
