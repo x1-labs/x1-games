@@ -31,7 +31,7 @@ import {
   type GetReplayInput,
   type ReplayView,
 } from "./stub.ts";
-import { SolanaBackend } from "./solana.ts";
+import { SolanaBackend, type SolanaSigner, type WalletLikeSigner } from "./solana.ts";
 
 export { __resetStub } from "./stub.ts";
 
@@ -54,8 +54,11 @@ const DEFAULT_RPC_URLS: Record<Exclude<Network, "stub">, string | null> = {
 
 export interface ConnectOptions {
   network: Network;
-  /** Signer for this actor. Defaults to a fresh Keypair for stub, required for chain backends. */
-  signer?: web3.Keypair;
+  /** Signer for this actor. Accepts either a raw `Keypair` (server-side, tests)
+   *  or a `WalletLikeSigner` (browser wallets — Phantom, Solflare, Backpack, or
+   *  anything from `@solana/wallet-adapter`). Defaults to a fresh Keypair for
+   *  stub; required for chain backends. */
+  signer?: SolanaSigner;
   /** Override RPC URL. Defaults per network. */
   rpcUrl?: string;
 }
@@ -83,10 +86,10 @@ interface Backend {
 /** The platform client — one instance per actor. */
 export class Platform {
   readonly network: Network;
-  readonly signer: web3.Keypair;
+  readonly signer: SolanaSigner;
   private readonly backend: Backend;
 
-  private constructor(network: Network, signer: web3.Keypair, backend: Backend) {
+  private constructor(network: Network, signer: SolanaSigner, backend: Backend) {
     this.network = network;
     this.signer = signer;
     this.backend = backend;
@@ -105,7 +108,7 @@ export class Platform {
       );
     }
 
-    const signer = opts.signer ?? Keypair.generate();
+    const signer: SolanaSigner = opts.signer ?? Keypair.generate();
 
     if (opts.network === "stub") {
       return new Platform(
@@ -163,6 +166,18 @@ export class Platform {
   }
 
   async joinMatch(input: JoinMatchInput): Promise<{ state: MatchPhase }> {
+    // The seated player is always the Platform's actor — the chain enforces
+    // `player: Signer<'info>` on join_match, so you can only seat yourself.
+    // Reject `{ player }` (or any other unknown field) to catch a common
+    // mistake where callers think they can seat someone on the actor's behalf.
+    const extras = Object.keys(input).filter((k) => k !== "matchId");
+    if (extras.length > 0) {
+      throw new Error(
+        `BadRequest: joinMatch input has unsupported field(s): ${extras.join(", ")}. ` +
+          `The seated player is always platform.actorPubkey — to seat a different ` +
+          `key, construct a Platform with that key as the signer.`,
+      );
+    }
     return this.backend.joinMatch(input);
   }
 
@@ -221,6 +236,7 @@ export type {
   GetReplayInput,
   ReplayView,
 } from "./stub.ts";
+export type { SolanaSigner, WalletLikeSigner } from "./solana.ts";
 export type {
   GameRegistration,
   MatchStart,

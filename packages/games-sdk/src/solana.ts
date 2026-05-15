@@ -48,9 +48,25 @@ const XP_LEDGER_PROGRAM_ID = new PublicKey("E4ccwzzHoLeziC4S7so55etspU6Ag6zrGNER
 
 // ---------------------------------------------------------------------------
 
+/** Browser-wallet shape (Phantom, Solflare, Backpack, @solana/wallet-adapter).
+ *  Only exposes a pubkey + sign methods — no raw secret key. Matches Anchor's
+ *  `Wallet` interface so it plugs into AnchorProvider as-is. */
+export interface WalletLikeSigner {
+  publicKey: web3.PublicKey;
+  signTransaction<T extends web3.Transaction | web3.VersionedTransaction>(tx: T): Promise<T>;
+  signAllTransactions<T extends web3.Transaction | web3.VersionedTransaction>(txs: T[]): Promise<T[]>;
+}
+
+/** Either a raw Keypair (server-side / tests) or a wallet-adapter (browser). */
+export type SolanaSigner = web3.Keypair | WalletLikeSigner;
+
+function isKeypair(s: SolanaSigner): s is web3.Keypair {
+  return "secretKey" in s && (s as web3.Keypair).secretKey instanceof Uint8Array;
+}
+
 export interface SolanaBackendOptions {
   rpcUrl: string;
-  signer: web3.Keypair;
+  signer: SolanaSigner;
   commitment?: web3.Commitment;
 }
 
@@ -202,12 +218,16 @@ export class SolanaBackend {
   private readonly program: AnyProgram;
   private readonly registry: AnyProgram;
   private readonly xp: AnyProgram;
-  private readonly signerKp: web3.Keypair;
+  private readonly signerPubkey: web3.PublicKey;
 
   constructor(opts: SolanaBackendOptions) {
     this.connection = new Connection(opts.rpcUrl, opts.commitment ?? "confirmed");
-    this.signerKp = opts.signer;
-    this.provider = new AnchorProvider(this.connection, new Wallet(opts.signer), {
+    // Anchor's Wallet *interface* is duck-typed (publicKey + sign methods).
+    // For a Keypair we wrap it in Anchor's Wallet class; a wallet-adapter is
+    // already shaped correctly and goes straight through.
+    const wallet = isKeypair(opts.signer) ? new Wallet(opts.signer) : opts.signer;
+    this.signerPubkey = opts.signer.publicKey;
+    this.provider = new AnchorProvider(this.connection, wallet, {
       commitment: opts.commitment ?? "confirmed",
     });
     // eslint-disable-next-line @typescript-eslint/no-explicit-any
@@ -216,7 +236,7 @@ export class SolanaBackend {
     this.registry = new Program(gameRegistryIdlJson as any, this.provider);
     // eslint-disable-next-line @typescript-eslint/no-explicit-any
     this.xp = new Program(xpLedgerIdlJson as any, this.provider);
-    this.actorPubkey = opts.signer.publicKey.toBase58();
+    this.actorPubkey = this.signerPubkey.toBase58();
   }
 
   // ---------------------------------------------------------------------------
@@ -286,10 +306,9 @@ export class SolanaBackend {
       })
       .accounts({
         game: gamePda,
-        dev: this.signerKp.publicKey,
+        dev: this.signerPubkey,
         systemProgram: SystemProgram.programId,
       })
-      .signers([this.signerKp])
       .rpc();
 
     return { gameId: reg.id, attestorPubkey: reg.attestorPubkey };
@@ -358,10 +377,9 @@ export class SolanaBackend {
         game: gameIdPk,
         matchAccount: matchPda,
         vault: vaultPda,
-        creator: this.signerKp.publicKey,
+        creator: this.signerPubkey,
         systemProgram: SystemProgram.programId,
       })
-      .signers([this.signerKp])
       .rpc();
 
     return {
@@ -379,10 +397,9 @@ export class SolanaBackend {
       .accounts({
         matchAccount: matchPda,
         vault: vaultPda,
-        player: this.signerKp.publicKey,
+        player: this.signerPubkey,
         systemProgram: SystemProgram.programId,
       })
-      .signers([this.signerKp])
       .rpc();
 
     const m = await this.program.account.match.fetch(matchPda);
@@ -420,11 +437,10 @@ export class SolanaBackend {
       .accounts({
         matchAccount: matchPda,
         vault: vaultPda,
-        attestor: this.signerKp.publicKey,
+        attestor: this.signerPubkey,
         treasury: treasuryPk,
       })
       .remainingAccounts(remainingAccounts)
-      .signers([this.signerKp])
       .rpc();
 
     // Build the off-chain envelope for the caller. The on-chain truth is the
@@ -474,7 +490,6 @@ export class SolanaBackend {
         treasury: m.treasury,
       })
       .remainingAccounts(remainingAccounts)
-      .signers([this.signerKp])
       .rpc();
 
     const updated = (await this.program.account.match.fetch(matchPda)) as MatchAccountRaw;
@@ -559,10 +574,9 @@ export class SolanaBackend {
         player: playerPk,
         xpBalance,
         creditReceipt: receipt,
-        payer: this.signerKp.publicKey,
+        payer: this.signerPubkey,
         systemProgram: SystemProgram.programId,
       })
-      .signers([this.signerKp])
       .rpc();
 
     const b = await this.xp.account.xpBalance.fetch(xpBalance);
