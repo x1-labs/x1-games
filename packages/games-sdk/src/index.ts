@@ -30,10 +30,10 @@ import {
   type UploadReplayResult,
   type GetReplayInput,
   type ReplayView,
-} from "./stub.ts";
-import { SolanaBackend, type SolanaSigner, type WalletLikeSigner } from "./solana.ts";
+} from "./stub.js";
+import { SolanaBackend, type SolanaSigner, type WalletLikeSigner } from "./solana.js";
 
-export { __resetStub } from "./stub.ts";
+export { __resetStub } from "./stub.js";
 
 const { Keypair } = web3;
 
@@ -235,8 +235,8 @@ export type {
   UploadReplayResult,
   GetReplayInput,
   ReplayView,
-} from "./stub.ts";
-export type { SolanaSigner, WalletLikeSigner } from "./solana.ts";
+} from "./stub.js";
+export type { SolanaSigner, WalletLikeSigner } from "./solana.js";
 export type {
   GameRegistration,
   MatchStart,

@@ -41,7 +41,7 @@ import type {
   UploadReplayResult,
   GetReplayInput,
   ReplayView,
-} from "./stub.ts";
+} from "./stub.js";
 
 const { BN, AnchorProvider, Program, Wallet } = anchor;
 const { Connection, PublicKey, SystemProgram } = web3;

@@ -27,21 +27,14 @@ Nothing else. The SDK absorbs everything between your game and the chain.
 
 ## Install
 
-> **Today:** path-dep against this repo on the same machine.
-
-```jsonc
-// in your game's package.json
-{
-  "dependencies": {
-    "@x1-labs/games-sdk": "file:../x1-games/packages/games-sdk",
-    "@x1-labs/games-protocol": "file:../x1-games/packages/games-protocol"
-  }
-}
+```sh
+bun add @x1-labs/games-sdk @coral-xyz/anchor @solana/web3.js
+# or: npm install @x1-labs/games-sdk @coral-xyz/anchor @solana/web3.js
 ```
 
-Then `bun install`.
+`@coral-xyz/anchor` and `@solana/web3.js` are **peer dependencies** — you install the versions your game pins. This keeps you in control of upgrades (CVE patches reach you without waiting on us) and avoids the `instanceof PublicKey` bugs you get when two copies of `web3.js` end up in the same tree.
 
-> **Coming soon:** publication to npm under `@x1-labs/*`. Same import paths.
+Compatible ranges: `@coral-xyz/anchor ^0.32.0`, `@solana/web3.js ^1.95.0`.
 
 ---
 

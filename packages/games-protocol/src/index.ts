@@ -6,12 +6,12 @@
 
 import { z } from "zod";
 
-export { canonicalJson, canonicalSha256, sha256Hex } from "./canonical.ts";
+export { canonicalJson, canonicalSha256, sha256Hex } from "./canonical.js";
 export {
   getDefaultReplayStore,
   type StoredReplay,
   type InMemoryReplayStore,
-} from "./replay-store.ts";
+} from "./replay-store.js";
 
 // =============================================================================
 // Primitives (INTEGRATION.md §2)

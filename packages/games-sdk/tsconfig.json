@@ -5,7 +5,8 @@
     "rootDir": "./src",
     "composite": true,
     "emitDeclarationOnly": true,
-    "allowImportingTsExtensions": true
+    "allowImportingTsExtensions": true,
+    "rewriteRelativeImportExtensions": true
   },
   "include": ["src/**/*.ts", "src/**/*.json"],
   "exclude": ["dist", "node_modules", "tests"]

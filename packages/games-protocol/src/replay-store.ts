@@ -7,8 +7,8 @@
 // canonical-JSON-encoded blob keyed by matchId, hash-verifiable — is the
 // same in both worlds.
 
-import { Replay } from "./index.ts";
-import { canonicalJson, canonicalSha256 } from "./canonical.ts";
+import { Replay } from "./index.js";
+import { canonicalJson, canonicalSha256 } from "./canonical.js";
 
 export interface StoredReplay {
   matchId: string;

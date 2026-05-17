@@ -9,6 +9,11 @@ build/
 .next/
 out/
 .turbo/
+*.tsbuildinfo
+
+# Per-package LICENSE copies (the canonical LICENSE lives at repo root and is
+# copied into each publishable package's dir by its prepublishOnly script).
+packages/*/LICENSE
 
 # Anchor / Solana
 chain/target/
