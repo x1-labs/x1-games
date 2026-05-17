@@ -1,8 +1,8 @@
 // Real on-chain backend. Talks to the deployed Match program via Anchor.
 //
-// v0 coverage: createMatch, joinMatch, signAndPostOutcome (TRUSTED), getMatch.
-// registerGame and subscribeMatchStart throw — Game Registry program is a stub
-// and the chain has no event-push for now.
+// v0 coverage: game registry, match create/join/read, outcome post/finalize,
+// XP, and process-local replay storage. subscribeMatchStart is still an
+// off-chain event-delivery concern for chain networks.
 
 import { createHash } from "node:crypto";
 // Use namespace imports — both packages publish browser ESM bundles with no

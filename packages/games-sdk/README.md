@@ -145,9 +145,9 @@ That's the full integration. Estimated effort: 1–2 dev-days for a game already
 ## Caveats and known sharp edges
 
 1. **All four networks are wired.** `stub` runs in-memory; `x1-localnet` defaults to `http://127.0.0.1:8899`; `x1-testnet` and `x1-mainnet` default to `rpc.testnet.x1.xyz` and `rpc.mainnet.x1.xyz` respectively. Override any of them with `opts.rpcUrl`.
-2. **Signatures from the stub are fake.** They pass schema validation (correct length and shape) but are SHA-256-derived, not real ed25519. Don't try to verify them against a real Solana key.
-3. **The `OutcomeBody` Borsh layout isn't fully locked.** The chain `post_outcome` instruction is still being implemented. If you're doing your own signing (`SELF_HOSTED` runtime), the byte-exact layout could shift before v1. For `MANAGED` runtime, the SDK handles serialization; this caveat doesn't affect you.
-4. **Only solo-vs-house and PvP-COSIGNED happy paths are exercised.** Async tournaments, ZK attestation, OPTIMISTIC disputes — all spec'd in INTEGRATION.md, none implemented yet.
+2. **The stub is a testing backend.** Stub-mode outcome envelopes are signed with a real ed25519 keypair allocated in memory for that game, but the key is not registered on-chain and disappears when the process exits.
+3. **The `OutcomeBody` Borsh layout is pre-v1.** The SDK and chain currently agree on the IDL-driven layout, and `MANAGED` runtime callers should let the SDK serialize it. If you sign outcomes yourself, keep the SDK version pinned with the deployed programs.
+4. **Only happy paths are exercised.** Solo-vs-house, PvP/COSIGNED, TRUSTED, and OPTIMISTIC finalize paths have coverage. Async tournaments, ZK attestation, and OPTIMISTIC dispute resolution are spec'd in INTEGRATION.md but not implemented yet.
 5. **Schema evolution.** Pre-v1, expect breaking changes. We'll bump `protocolVersion` and call them out in the [`INTEGRATION.md`](../../INTEGRATION.md) changelog.
 
 ---
