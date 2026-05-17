@@ -5,6 +5,7 @@
 // Divergence between the two is a bug in the schemas, not in the doc.
 
 import { z } from "zod";
+import bs58 from "bs58";
 
 export { canonicalJson, canonicalSha256, sha256Hex } from "./canonical.js";
 export {
@@ -17,12 +18,24 @@ export {
 // Primitives (INTEGRATION.md §2)
 // =============================================================================
 
-/** 32-byte ed25519 public key, base58-encoded. Length 32–44 chars. */
+/** 32-byte ed25519 public key, base58-encoded. Length 32–44 chars.
+ *  Validates that the string actually base58-decodes to 32 bytes — the regex
+ *  check alone admits many strings that aren't valid pubkeys. */
 export const Pubkey = z
   .string()
   .min(32)
   .max(44)
-  .regex(/^[1-9A-HJ-NP-Za-km-z]+$/, "must be base58");
+  .regex(/^[1-9A-HJ-NP-Za-km-z]+$/, "must be base58")
+  .refine(
+    (s) => {
+      try {
+        return bs58.decode(s).length === 32;
+      } catch {
+        return false;
+      }
+    },
+    { message: "must base58-decode to exactly 32 bytes" },
+  );
 export type Pubkey = z.infer<typeof Pubkey>;
 
 /** 64-byte ed25519 signature, 0x-prefixed lowercase hex (130 chars). */

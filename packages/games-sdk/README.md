@@ -143,7 +143,7 @@ That's the full integration. Estimated effort: 1–2 dev-days for a game already
 
 ## Caveats and known sharp edges
 
-1. **Stub network only.** As of v0, `network: "mainnet" | "devnet" | "localnet"` all throw "not yet implemented" deliberately, to avoid silent fallthrough. The stub flows match the production schemas, so a stub-passing integration validates the same way when devnet is up.
+1. **All four networks are wired.** `stub` runs in-memory; `x1-localnet` defaults to `http://127.0.0.1:8899`; `x1-testnet` and `x1-mainnet` default to `rpc.testnet.x1.xyz` and `rpc.mainnet.x1.xyz` respectively. Override any of them with `opts.rpcUrl`.
 2. **Signatures from the stub are fake.** They pass schema validation (correct length and shape) but are SHA-256-derived, not real ed25519. Don't try to verify them against a real Solana key.
 3. **The `OutcomeBody` Borsh layout isn't fully locked.** The chain `post_outcome` instruction is still being implemented. If you're doing your own signing (`SELF_HOSTED` runtime), the byte-exact layout could shift before v1. For `MANAGED` runtime, the SDK handles serialization; this caveat doesn't affect you.
 4. **Only solo-vs-house and PvP-COSIGNED happy paths are exercised.** Async tournaments, ZK attestation, OPTIMISTIC disputes — all spec'd in INTEGRATION.md, none implemented yet.

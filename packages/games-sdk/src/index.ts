@@ -37,19 +37,19 @@ export { __resetStub } from "./stub.js";
 
 const { Keypair } = web3;
 
-export type Network = "x1-mainnet" | "x1-devnet" | "x1-localnet" | "stub";
+export type Network = "x1-mainnet" | "x1-testnet" | "x1-localnet" | "stub";
 
 const VALID_NETWORKS: readonly Network[] = [
   "x1-mainnet",
-  "x1-devnet",
+  "x1-testnet",
   "x1-localnet",
   "stub",
 ];
 
-const DEFAULT_RPC_URLS: Record<Exclude<Network, "stub">, string | null> = {
+const DEFAULT_RPC_URLS: Record<Exclude<Network, "stub">, string> = {
   "x1-localnet": "http://127.0.0.1:8899",
-  "x1-devnet": null,
-  "x1-mainnet": null,
+  "x1-testnet": "https://rpc.testnet.x1.xyz",
+  "x1-mainnet": "https://rpc.mainnet.x1.xyz",
 };
 
 export interface ConnectOptions {
@@ -118,18 +118,14 @@ export class Platform {
       );
     }
 
-    if (opts.network === "x1-localnet") {
-      const rpcUrl = opts.rpcUrl ?? DEFAULT_RPC_URLS["x1-localnet"]!;
-      return new Platform(
-        "x1-localnet",
-        signer,
-        new SolanaBackend({ rpcUrl, signer }),
-      );
-    }
-
-    throw new Error(
-      `Network "${opts.network}" is not yet implemented in this SDK build. ` +
-        `Use network: "stub" or "x1-localnet" for now.`,
+    // All X1 chain networks share the same SolanaBackend; only the default
+    // RPC URL differs. Callers can override with opts.rpcUrl (handy for
+    // private RPCs or self-hosted validators).
+    const rpcUrl = opts.rpcUrl ?? DEFAULT_RPC_URLS[opts.network];
+    return new Platform(
+      opts.network,
+      signer,
+      new SolanaBackend({ rpcUrl, signer }),
     );
   }
 

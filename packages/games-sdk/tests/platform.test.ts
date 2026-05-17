@@ -19,13 +19,15 @@ describe("Platform.connect", () => {
     }).toThrow(/Unknown network/);
   });
 
-  test("rejects networks that are valid but not yet implemented", () => {
-    expect(() => {
-      Platform.connect({ network: "x1-mainnet" });
-    }).toThrow(/not yet implemented/);
-    expect(() => {
-      Platform.connect({ network: "x1-devnet" });
-    }).toThrow(/not yet implemented/);
+  test("connects to all X1 chain networks (testnet/mainnet/localnet)", () => {
+    // Construction is offline — we just assert the Platform is built and
+    // points at the right network. No RPC roundtrip happens until a method
+    // is invoked, so this is safe to run in unit tests.
+    for (const network of ["x1-mainnet", "x1-testnet", "x1-localnet"] as const) {
+      const p = Platform.connect({ network });
+      expect(p.network).toBe(network);
+      expect(p.pubkey).toMatch(/^[1-9A-HJ-NP-Za-km-z]{32,44}$/);
+    }
   });
 
   test("two stub platforms get different actor pubkeys", () => {
