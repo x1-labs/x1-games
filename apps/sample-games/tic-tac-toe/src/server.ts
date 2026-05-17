@@ -57,6 +57,7 @@ export class TttGameServer {
     playerX: string;
     playerO: string;
     seats: number;
+    settlementDeadline: number;
     settled: boolean;
   } {
     const m = this.matches.get(matchId);
@@ -71,6 +72,7 @@ export class TttGameServer {
       playerX: m.session.players[0],
       playerO: m.session.players[1],
       seats: m.start.seats,
+      settlementDeadline: m.start.settlementDeadline,
       settled: m.settled,
     };
   }
@@ -116,7 +118,7 @@ export class TttGameServer {
       players: view.players,
       attestorPubkey: view.attestorPubkey,
       fundingDeadline: 0,
-      settlementDeadline: 0,
+      settlementDeadline: view.settlementDeadline,
       outcomeEndpoint: `local://attached/${matchId}/outcome`,
       replayUploadUrl: null,
     };

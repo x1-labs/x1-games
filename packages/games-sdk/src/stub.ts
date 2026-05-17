@@ -167,6 +167,8 @@ export interface MatchView {
   seed: string;
   /** Dispute window in seconds (0 for TRUSTED/COSIGNED). */
   challengeWindowSecs: number;
+  /** Unix sec after which the match may be settled by timeout rules. */
+  settlementDeadline: number;
   /** Unix sec the outcome was posted. 0 until Settled. */
   settledAt: number;
   /** House contribution to the pot, in lamports. "0" for pure-PvP. */
@@ -325,6 +327,7 @@ export class StubBackend {
       attestorPubkey: m.attestorPubkey,
       seed,
       challengeWindowSecs: m.challengeWindowSecs,
+      settlementDeadline: m.settlementDeadline,
       settledAt: m.settledAt,
       housePrize: m.housePrize ?? "0",
       ...(m.outcome ? { outcome: m.outcome } : {}),
@@ -486,6 +489,7 @@ export class StubBackend {
       attestorPubkey: m.attestorPubkey,
       seed,
       challengeWindowSecs: m.challengeWindowSecs,
+      settlementDeadline: m.settlementDeadline,
       settledAt: m.settledAt,
       housePrize: m.housePrize ?? "0",
       ...(m.outcome ? { outcome: m.outcome } : {}),
