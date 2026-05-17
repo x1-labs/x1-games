@@ -14,6 +14,8 @@ x1-games/
 │   ├── services/                   # @x1-labs/games-services — tRPC API (games, lobbies, xp, replays)
 │   └── sample-games/
 │       └── tic-tac-toe/            # @x1-labs/sample-tic-tac-toe — reference integration
+├── docs/
+│   └── platform-backlog.md         # platform services, decentralization split, and roadmap backlog
 ├── diagrams/                       # architecture & flow diagrams (SVG + PNG)
 ├── INTEGRATION.md                  # the v0 game integration contract
 ├── WHITEPAPER.md                   # design rationale
