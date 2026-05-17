@@ -548,6 +548,7 @@ export class SolanaBackend {
       attestorPubkey: m.attestor.toBase58(),
       seed,
       challengeWindowSecs: m.challengeWindowSecs,
+      settlementDeadline: m.settlementDeadline.toNumber(),
       settledAt: m.settledAt.toNumber(),
       ...(outcome ? { outcome } : {}),
     };

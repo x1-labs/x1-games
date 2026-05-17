@@ -38,6 +38,7 @@ describe("stub network end-to-end", () => {
       received.push(event);
     });
 
+    const beforeCreate = Math.floor(Date.now() / 1000);
     const created = await dev.createMatch({
       gameId: "pacman",
       seats: 1,
@@ -48,6 +49,7 @@ describe("stub network end-to-end", () => {
       fundingDeadlineSec: 600,
       settlementDeadlineSec: 3600,
     });
+    const afterCreate = Math.floor(Date.now() / 1000);
 
     await player.joinMatch({ matchId: created.matchId });
 
@@ -68,6 +70,9 @@ describe("stub network end-to-end", () => {
     // TRUSTED defaults to challengeWindowSecs=0 → atomic settle+pay.
     expect(m.state).toBe("Paid");
     expect(m.outcome?.winners).toEqual([player.pubkey]);
+    expect(m.settlementDeadline).toBe(received[0]!.settlementDeadline);
+    expect(m.settlementDeadline).toBeGreaterThanOrEqual(beforeCreate + 3600);
+    expect(m.settlementDeadline).toBeLessThanOrEqual(afterCreate + 3600);
 
     unsubscribe();
   });

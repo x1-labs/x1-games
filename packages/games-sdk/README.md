@@ -70,6 +70,7 @@ platform.subscribeMatchStart("pacman", async (start) => {
     matchId: start.matchId,
     seed: start.seed,
     players: start.players,
+    settlementDeadline: start.settlementDeadline,
   });
 
   // 3. Play the match. When it ends, post the outcome.

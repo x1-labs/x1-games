@@ -114,6 +114,35 @@ describe("TttGameServer — end-to-end against SDK stub", () => {
     ).toThrow(/no session/i);
   });
 
+  test("attachMatch carries the SDK settlement deadline into the session start", async () => {
+    const dev = Platform.connect({ network: "stub" });
+    const playerA = Platform.connect({ network: "stub" });
+    const playerB = Platform.connect({ network: "stub" });
+
+    await registerTtt(dev);
+    const { matchId } = await dev.createMatch({
+      gameId: "tic-tac-toe",
+      seats: 2,
+      stakePerSeat: "5000000000",
+      housePrize: null,
+      rakeBps: 300,
+      model: "TRUSTED",
+      fundingDeadlineSec: 600,
+      settlementDeadlineSec: 3600,
+    });
+    await playerA.joinMatch({ matchId });
+    await playerB.joinMatch({ matchId });
+
+    const server = new TttGameServer({ platform: dev });
+    await server.attachMatch(matchId);
+
+    const view = await dev.getMatch(matchId);
+    const snapshot = server.snapshot(matchId);
+    expect(snapshot?.matchId).toBe(matchId);
+    expect(snapshot?.settlementDeadline).toBe(view.settlementDeadline);
+    expect(view.settlementDeadline).toBeGreaterThan(Math.floor(Date.now() / 1000));
+  });
+
   test("outcome submission is idempotent (no duplicate settlement on retry)", async () => {
     const { dev, playerA, playerB, server, matchId } = await setUpFundedMatch();
 
