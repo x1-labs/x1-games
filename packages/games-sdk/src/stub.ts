@@ -6,6 +6,9 @@
 // `network` only.
 
 import { createHash } from "node:crypto";
+import nacl from "tweetnacl";
+import bs58 from "bs58";
+import * as web3 from "@solana/web3.js";
 import {
   GameRegistration,
   MatchStart,
@@ -20,6 +23,7 @@ import {
   type Hash,
   type Replay,
 } from "@x1-labs/games-protocol";
+import { buildEnvelopeAttestation, BN } from "./attestation.js";
 
 // Base58 alphabet (matches the regex in games-protocol).
 const B58 = "123456789ABCDEFGHJKLMNPQRSTUVWXYZabcdefghijkmnopqrstuvwxyz";
@@ -46,21 +50,22 @@ function fakePubkey(tag: string): Pubkey {
   return base58FromBytes(digest);
 }
 
-function fakeSignature(...parts: string[]): string {
-  const a = createHash("sha256").update("x1-stub-sig-a:" + parts.join("|")).digest("hex");
-  const b = createHash("sha256").update("x1-stub-sig-b:" + parts.join("|")).digest("hex");
-  return "0x" + a + b;
-}
-
-function fakeBorshHex(...parts: string[]): string {
-  return "0x" + createHash("sha256").update("x1-stub-borsh:" + parts.join("|")).digest("hex");
-}
-
 // =============================================================================
 // Stored state shapes
 // =============================================================================
 
-type StoredGame = GameRegistration & { gameId: GameId };
+/** Per-game stored data, including a real ed25519 keypair the stub uses as the
+ *  attestor. Even for SELF_HOSTED games the stub holds its own keypair — the
+ *  alternative would be to ship un-signable envelopes from stub-mode, which
+ *  is exactly the dishonest behavior this whole refactor exists to remove.
+ *  Stub mode is dev-only; the published attestor pubkey from registerGame is
+ *  the stub's own, NOT whatever the dev passed in `reg.attestorPubkey`. */
+type StoredGame = GameRegistration & {
+  gameId: GameId;
+  /** Stub-generated ed25519 keypair. publicKey/secretKey are raw bytes from
+   *  tweetnacl; we re-encode the pubkey to base58 when surfacing it. */
+  attestorKeypair: nacl.SignKeyPair;
+};
 
 export type MatchPhase = "Created" | "Funded" | "Live" | "Settled" | "Paid";
 
@@ -259,9 +264,17 @@ export class StubBackend {
 
   async registerGame(reg: GameRegistration): Promise<{ gameId: GameId; attestorPubkey: Pubkey }> {
     GameRegistration.parse(reg);
-    const attestorPubkey =
-      reg.runtime === "MANAGED" ? fakePubkey(`attestor:${reg.id}`) : reg.attestorPubkey;
-    STATE.games.set(reg.id, { ...reg, gameId: reg.id, attestorPubkey });
+    // Generate a real ed25519 keypair so stub-issued OutcomeEnvelopes carry a
+    // verifiable signature. We override reg.attestorPubkey unconditionally —
+    // stub mode is dev-only and can't sign for arbitrary external pubkeys.
+    const kp = nacl.sign.keyPair();
+    const attestorPubkey = bs58.encode(kp.publicKey);
+    STATE.games.set(reg.id, {
+      ...reg,
+      gameId: reg.id,
+      attestorPubkey,
+      attestorKeypair: kp,
+    });
     return { gameId: reg.id, attestorPubkey };
   }
 
@@ -410,13 +423,25 @@ export class StubBackend {
       attestor: m.attestorPubkey,
     });
 
-    const borshHex = fakeBorshHex(input.matchId, input.idempotencyKey);
-    const signature = fakeSignature(borshHex, m.attestorPubkey);
+    // Sign the canonical attestation payload with the per-game stub keypair.
+    // The resulting envelope is verifiable by verifyOutcomeEnvelope() — same
+    // path as a real chain-issued envelope.
+    const game = STATE.games.get(m.gameId);
+    if (!game) throw new Error(`Internal: game "${m.gameId}" missing for match "${input.matchId}"`);
+    const hashBytes = Buffer.from(input.replayHash.slice(2), "hex");
+    const { borsh, signature } = await buildEnvelopeAttestation({
+      matchPda: new web3.PublicKey(input.matchId),
+      args: {
+        payouts: input.payoutShares.map((p) => new BN(p)),
+        replayHash: Array.from(hashBytes),
+      },
+      sign: async (payload) => nacl.sign.detached(payload, game.attestorKeypair.secretKey),
+    });
 
     const envelope: OutcomeEnvelope = OutcomeEnvelope.parse({
       protocolVersion: "v0",
       outcome: body,
-      borsh: borshHex,
+      borsh,
       signature,
       idempotencyKey: input.idempotencyKey,
     });

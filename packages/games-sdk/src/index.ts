@@ -34,6 +34,7 @@ import {
 import { SolanaBackend, type SolanaSigner, type WalletLikeSigner } from "./solana.js";
 
 export { __resetStub } from "./stub.js";
+export { verifyOutcomeEnvelope, type VerifyResult } from "./attestation.js";
 
 const { Keypair } = web3;
 

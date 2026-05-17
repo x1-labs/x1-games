@@ -36,8 +36,16 @@ jobs:
         run: bun test
         working-directory: packages/games-protocol
 
+      - name: Build — games-protocol
+        run: bun run build
+        working-directory: packages/games-protocol
+
       - name: Test — games-sdk
         run: bun test
+        working-directory: packages/games-sdk
+
+      - name: Build — games-sdk
+        run: bun run build
         working-directory: packages/games-sdk
 
       - name: Test — services
@@ -128,6 +136,11 @@ jobs:
           cp chain/target/idl/match_program.json packages/games-sdk/src/idl/
           cp chain/target/idl/game_registry.json packages/games-sdk/src/idl/
           cp chain/target/idl/xp_ledger.json packages/games-sdk/src/idl/
+
+      - name: Build workspace packages
+        run: |
+          bun run --cwd packages/games-protocol build
+          bun run --cwd packages/games-sdk build
 
       - name: Anchor test
         run: anchor test --skip-build

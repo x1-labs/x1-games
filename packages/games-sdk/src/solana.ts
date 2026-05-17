@@ -11,6 +11,7 @@ import { createHash } from "node:crypto";
 // to normalize the same way (see commit 237be0c).
 import * as anchor from "@coral-xyz/anchor";
 import * as web3 from "@solana/web3.js";
+import { buildEnvelopeAttestation, signMessageWith } from "./attestation.js";
 import {
   MatchStart,
   OutcomeBody,
@@ -54,11 +55,17 @@ const XP_LEDGER_PROGRAM_ID = new PublicKey("E4ccwzzHoLeziC4S7so55etspU6Ag6zrGNER
 
 /** Browser-wallet shape (Phantom, Solflare, Backpack, @solana/wallet-adapter).
  *  Only exposes a pubkey + sign methods — no raw secret key. Matches Anchor's
- *  `Wallet` interface so it plugs into AnchorProvider as-is. */
+ *  `Wallet` interface so it plugs into AnchorProvider as-is.
+ *
+ *  `signMessage` is optional but recommended: required for any SDK call that
+ *  produces an off-chain signed envelope (today: `signAndPostOutcome`'s
+ *  returned `OutcomeEnvelope`). Phantom, Solflare, Backpack, Glow, and the
+ *  @solana/wallet-adapter standard interface all expose it. */
 export interface WalletLikeSigner {
   publicKey: web3.PublicKey;
   signTransaction<T extends web3.Transaction | web3.VersionedTransaction>(tx: T): Promise<T>;
   signAllTransactions<T extends web3.Transaction | web3.VersionedTransaction>(txs: T[]): Promise<T[]>;
+  signMessage?(message: Uint8Array): Promise<Uint8Array | { signature: Uint8Array }>;
 }
 
 /** Either a raw Keypair (server-side / tests) or a wallet-adapter (browser). */
@@ -125,16 +132,6 @@ function deriveXpReceiptPda(matchPda: web3.PublicKey, player: web3.PublicKey): w
     XP_LEDGER_PROGRAM_ID,
   );
   return pda;
-}
-
-function fakeBorshHex(...parts: string[]): string {
-  return "0x" + createHash("sha256").update("x1-solana-borsh:" + parts.join("|")).digest("hex");
-}
-
-function fakeSignature(...parts: string[]): string {
-  const a = createHash("sha256").update("x1-solana-sig-a:" + parts.join("|")).digest("hex");
-  const b = createHash("sha256").update("x1-solana-sig-b:" + parts.join("|")).digest("hex");
-  return "0x" + a + b;
 }
 
 /** Convert an Anchor enum-object like `{ created: {} }` to our string phase. */
@@ -223,6 +220,10 @@ export class SolanaBackend {
   private readonly registry: AnyProgram;
   private readonly xp: AnyProgram;
   private readonly signerPubkey: web3.PublicKey;
+  /** Held for off-chain envelope signing — Anchor's `Wallet` doesn't expose
+   *  signMessage, so we keep the original signer to route through
+   *  `signMessageWith()` when building OutcomeEnvelope attestations. */
+  private readonly signer: SolanaSigner;
 
   constructor(opts: SolanaBackendOptions) {
     this.connection = new Connection(opts.rpcUrl, opts.commitment ?? "confirmed");
@@ -230,6 +231,7 @@ export class SolanaBackend {
     // For a Keypair we wrap it in Anchor's Wallet class; a wallet-adapter is
     // already shaped correctly and goes straight through.
     const wallet = isKeypair(opts.signer) ? new Wallet(opts.signer) : opts.signer;
+    this.signer = opts.signer;
     this.signerPubkey = opts.signer.publicKey;
     this.provider = new AnchorProvider(this.connection, wallet, {
       commitment: opts.commitment ?? "confirmed",
@@ -433,11 +435,12 @@ export class SolanaBackend {
       isWritable: true,
     }));
 
+    // Borsh-encode PostOutcomeArgs via Anchor's BorshCoder driven by the IDL —
+    // no hand-rolled offsets. The same wire format Anchor sends to the program.
+    const args = { payouts, replayHash: Array.from(hashBytes) };
+
     await this.program.methods
-      .postOutcome({
-        payouts,
-        replayHash: Array.from(hashBytes),
-      })
+      .postOutcome(args)
       .accounts({
         matchAccount: matchPda,
         vault: vaultPda,
@@ -447,8 +450,16 @@ export class SolanaBackend {
       .remainingAccounts(remainingAccounts)
       .rpc();
 
-    // Build the off-chain envelope for the caller. The on-chain truth is the
-    // settled Match account; the envelope is the artifact the caller archives.
+    // The on-chain Match record is the canonical settlement truth. The
+    // envelope is an independently-verifiable artifact the caller can archive
+    // and verify later via verifyOutcomeEnvelope (exported from SDK root) —
+    // doesn't require a chain roundtrip.
+    const { borsh, signature } = await buildEnvelopeAttestation({
+      matchPda,
+      args,
+      sign: (payload) => signMessageWith(this.signer, payload),
+    });
+
     const body: OutcomeBody = OutcomeBody.parse({
       matchId: input.matchId,
       winners: input.winners,
@@ -461,8 +472,8 @@ export class SolanaBackend {
     return OutcomeEnvelope.parse({
       protocolVersion: "v0",
       outcome: body,
-      borsh: fakeBorshHex(input.matchId, input.idempotencyKey),
-      signature: fakeSignature(input.matchId, input.idempotencyKey),
+      borsh,
+      signature,
       idempotencyKey: input.idempotencyKey,
     });
   }

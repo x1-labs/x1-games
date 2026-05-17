@@ -60,7 +60,7 @@
     },
     "packages/games-protocol": {
       "name": "@x1-labs/games-protocol",
-      "version": "0.1.0",
+      "version": "0.1.1",
       "dependencies": {
         "bs58": "^6.0.0",
         "zod": "^3.23.8",
@@ -72,9 +72,11 @@
     },
     "packages/games-sdk": {
       "name": "@x1-labs/games-sdk",
-      "version": "0.1.0",
+      "version": "0.1.2",
       "dependencies": {
         "@x1-labs/games-protocol": "workspace:^",
+        "bs58": "^6.0.0",
+        "tweetnacl": "^1.0.3",
         "zod": "^3.23.8",
       },
       "devDependencies": {

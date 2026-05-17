@@ -1,6 +1,6 @@
 {
   "name": "@x1-labs/games-sdk",
-  "version": "0.1.1",
+  "version": "0.1.2",
   "description": "Typed TypeScript SDK for building games on X1 Games — match lifecycle, settlement, replays, XP",
   "license": "MIT",
   "author": "X1 Labs Team",
@@ -39,7 +39,7 @@
     "access": "public"
   },
   "scripts": {
-    "build": "bun build ./src/index.ts --outdir ./dist --target node --format esm --external @coral-xyz/anchor --external @solana/web3.js --external @x1-labs/games-protocol --external zod && tsc -b",
+    "build": "bun build ./src/index.ts --outdir ./dist --target node --format esm --external @coral-xyz/anchor --external @solana/web3.js --external @x1-labs/games-protocol --external zod --external tweetnacl --external bs58 && tsc -b",
     "test": "bun test",
     "test:watch": "bun test --watch",
     "typecheck": "tsc --noEmit",
@@ -52,6 +52,8 @@
   },
   "dependencies": {
     "@x1-labs/games-protocol": "workspace:^",
+    "bs58": "^6.0.0",
+    "tweetnacl": "^1.0.3",
     "zod": "^3.23.8"
   },
   "devDependencies": {
