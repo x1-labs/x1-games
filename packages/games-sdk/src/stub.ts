@@ -167,6 +167,8 @@ export interface MatchView {
   seed: string;
   /** Dispute window in seconds (0 for TRUSTED/COSIGNED). */
   challengeWindowSecs: number;
+  /** Unix sec after which the match may no longer accept funding/join. */
+  fundingDeadline: number;
   /** Unix sec after which the match may be settled by timeout rules. */
   settlementDeadline: number;
   /** Unix sec the outcome was posted. 0 until Settled. */
@@ -327,6 +329,7 @@ export class StubBackend {
       attestorPubkey: m.attestorPubkey,
       seed,
       challengeWindowSecs: m.challengeWindowSecs,
+      fundingDeadline: m.fundingDeadline,
       settlementDeadline: m.settlementDeadline,
       settledAt: m.settledAt,
       housePrize: m.housePrize ?? "0",
@@ -489,6 +492,7 @@ export class StubBackend {
       attestorPubkey: m.attestorPubkey,
       seed,
       challengeWindowSecs: m.challengeWindowSecs,
+      fundingDeadline: m.fundingDeadline,
       settlementDeadline: m.settlementDeadline,
       settledAt: m.settledAt,
       housePrize: m.housePrize ?? "0",

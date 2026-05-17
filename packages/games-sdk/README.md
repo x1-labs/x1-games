@@ -4,7 +4,7 @@ Typed TypeScript SDK for building games on **X1 Games** — the settlement layer
 
 This is the only package you need to integrate. It re-exports the protocol schemas from `@x1-labs/games-protocol` and routes calls to whichever backend you select at `connect()` time.
 
-> **Status: v0, mutable.** This SDK targets the v0 integration contract. Breaking changes are expected during v0 development and get sub-version bumps. Integrate against it; don't productionize against it. See [`INTEGRATION.md`](../../INTEGRATION.md) §10.
+> **Status: v0, mutable.** This SDK targets the v0 integration contract. Breaking changes are expected during v0 development and get sub-version bumps. Integrate against it; don't productionize against it. See [`INTEGRATION.md`](../../docs/INTEGRATION.md) §10.
 
 ---
 
@@ -13,7 +13,7 @@ This is the only package you need to integrate. It re-exports the protocol schem
 | You call... | The platform handles... |
 |---|---|
 | `platform.registerGame(...)` | Writing the game to the on-chain Game Registry |
-| `platform.subscribeMatchStart(...)` | Pushing `MatchStart` events when a wagered match is ready |
+| `platform.subscribeMatchStart(...)` | Delivering `MatchStart` events when a wagered match is ready; `stub` emits in-memory, chain backends derive events by polling on-chain matches |
 | `platform.signAndPostOutcome(...)` | Borsh-encoding, ed25519-signing (for `MANAGED` runtime), and forwarding to the chain `Match` program |
 
 What your game still owns:
@@ -148,15 +148,15 @@ That's the full integration. Estimated effort: 1–2 dev-days for a game already
 2. **The stub is a testing backend.** Stub-mode outcome envelopes are signed with a real ed25519 keypair allocated in memory for that game, but the key is not registered on-chain and disappears when the process exits.
 3. **The `OutcomeBody` Borsh layout is pre-v1.** The SDK and chain currently agree on the IDL-driven layout, and `MANAGED` runtime callers should let the SDK serialize it. If you sign outcomes yourself, keep the SDK version pinned with the deployed programs.
 4. **Only happy paths are exercised.** Solo-vs-house, PvP/COSIGNED, TRUSTED, and OPTIMISTIC finalize paths have coverage. Async tournaments, ZK attestation, and OPTIMISTIC dispute resolution are spec'd in INTEGRATION.md but not implemented yet.
-5. **Schema evolution.** Pre-v1, expect breaking changes. We'll bump `protocolVersion` and call them out in the [`INTEGRATION.md`](../../INTEGRATION.md) changelog.
+5. **Schema evolution.** Pre-v1, expect breaking changes. We'll bump `protocolVersion` and call them out in the [`INTEGRATION.md`](../../docs/INTEGRATION.md) changelog.
 
 ---
 
 ## Reference docs
 
-- [`INTEGRATION.md`](../../INTEGRATION.md) — the v0 contract. The narrative.
+- [`INTEGRATION.md`](../../docs/INTEGRATION.md) — the v0 contract. The narrative.
 - [`@x1-labs/games-protocol`](../games-protocol/) — the schemas. The shape.
-- [`WHITEPAPER.md`](../../WHITEPAPER.md) — why the platform looks like this. The reasoning.
+- [`WHITEPAPER.md`](../../docs/WHITEPAPER.md) — why the platform looks like this. The reasoning.
 - This file — how to wire a game up in 10 minutes. The starting point.
 
 If you're a game dev, read this file first. INTEGRATION.md is the reference you'll come back to.

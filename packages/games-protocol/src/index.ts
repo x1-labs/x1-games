@@ -1,5 +1,5 @@
 // @x1-labs/games-protocol — v0 schemas for the X1 Games integration contract.
-// Canonical reference: INTEGRATION.md at the repo root.
+// Canonical reference: docs/INTEGRATION.md.
 //
 // These schemas are the *shape* contract. The doc is the *narrative* contract.
 // Divergence between the two is a bug in the schemas, not in the doc.

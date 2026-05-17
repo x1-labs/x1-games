@@ -1,6 +1,7 @@
 import { anchor, web3 as pkg } from "./_anchor.ts";
 import { expect } from "chai";
 import { Platform } from "@x1-labs/games-sdk";
+import type { MatchStart } from "@x1-labs/games-protocol";
 
 // End-to-end test of the SolanaBackend through the public SDK surface,
 // running against the local validator that anchor test spins up.
@@ -21,6 +22,25 @@ const REPLAY_HASH_HEX = "0x" + "42".repeat(32);
 async function airdrop(to: pkg.PublicKey, lamports: number): Promise<void> {
   const sig = await provider.connection.requestAirdrop(to, lamports);
   await provider.connection.confirmTransaction(sig, "confirmed");
+}
+
+function waitForMatchStart(
+  platform: Platform,
+  gameId: string,
+  timeoutMs = 6_000,
+): Promise<{ event: MatchStart; unsubscribe: () => void }> {
+  let unsubscribe: (() => void) | undefined;
+  return new Promise((resolve, reject) => {
+    const timer = setTimeout(() => {
+      unsubscribe?.();
+      reject(new Error(`timed out waiting for MatchStart for ${gameId}`));
+    }, timeoutMs);
+
+    unsubscribe = platform.subscribeMatchStart(gameId, (event) => {
+      clearTimeout(timer);
+      resolve({ event, unsubscribe: unsubscribe! });
+    });
+  });
 }
 
 describe("SDK SolanaBackend — end-to-end against deployed match_program", () => {
@@ -150,5 +170,66 @@ describe("SDK SolanaBackend — end-to-end against deployed match_program", () =
     const b = await p.registerGame(reg);
     expect(b.gameId).to.equal(a.gameId);
     expect(b.attestorPubkey).to.equal(a.attestorPubkey);
+  });
+
+  it("subscribeMatchStart emits a chain-derived MatchStart when a match becomes Live", async () => {
+    const devKp = Keypair.generate();
+    const playerKp = Keypair.generate();
+    const treasuryKp = Keypair.generate();
+    await airdrop(devKp.publicKey, 2 * LAMPORTS_PER_SOL);
+    await airdrop(playerKp.publicKey, 2 * LAMPORTS_PER_SOL);
+    await airdrop(treasuryKp.publicKey, 1);
+
+    const rpcUrl = provider.connection.rpcEndpoint;
+    const dev = Platform.connect({ network: "x1-localnet", signer: devKp, rpcUrl });
+    const player = Platform.connect({ network: "x1-localnet", signer: playerKp, rpcUrl });
+
+    const gameIdStr = `sdk-sub-${Math.floor(Math.random() * 1_000_000).toString(36)}`;
+    await dev.registerGame({
+      protocolVersion: "v0",
+      id: gameIdStr,
+      displayName: "SDK Subscribe Test",
+      tier: "DEMO",
+      runtime: "MANAGED",
+      attestationModels: ["TRUSTED"],
+      seats: { min: 1, max: 2 },
+      simulator: { kind: "server", sha256: "0x" + "44".repeat(32) },
+      devPubkey: dev.pubkey,
+      attestorPubkey: dev.pubkey,
+      revenueReceiver: dev.pubkey,
+      joinUrlTemplate: "https://example.test/play/{matchId}",
+      metadataUri: "https://example.test/m.json",
+    });
+
+    const started = waitForMatchStart(dev, gameIdStr);
+    const { matchId } = await dev.createMatch({
+      gameId: gameIdStr,
+      seats: 1,
+      stakePerSeat: "1000000",
+      housePrize: null,
+      rakeBps: 300,
+      model: "TRUSTED",
+      fundingDeadlineSec: 600,
+      settlementDeadlineSec: 3600,
+      attestor: dev.pubkey,
+      treasury: treasuryKp.publicKey.toBase58(),
+    });
+    await player.joinMatch({ matchId });
+
+    const { event, unsubscribe } = await started;
+    unsubscribe();
+
+    expect(event.protocolVersion).to.equal("v0");
+    expect(event.matchId).to.equal(matchId);
+    expect(event.gameId).to.equal(gameIdStr);
+    expect(event.players).to.deep.equal([player.pubkey]);
+    expect(event.seats).to.equal(1);
+    expect(event.stakePerSeat).to.equal("1000000");
+    expect(event.housePrize).to.equal(null);
+    expect(event.rakeBps).to.equal(300);
+    expect(event.model).to.equal("TRUSTED");
+    expect(event.attestorPubkey).to.equal(dev.pubkey);
+    expect(event.fundingDeadline).to.be.greaterThan(0);
+    expect(event.settlementDeadline).to.be.greaterThan(event.fundingDeadline);
   });
 });

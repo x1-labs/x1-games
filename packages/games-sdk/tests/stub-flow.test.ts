@@ -70,6 +70,9 @@ describe("stub network end-to-end", () => {
     // TRUSTED defaults to challengeWindowSecs=0 → atomic settle+pay.
     expect(m.state).toBe("Paid");
     expect(m.outcome?.winners).toEqual([player.pubkey]);
+    expect(m.fundingDeadline).toBe(received[0]!.fundingDeadline);
+    expect(m.fundingDeadline).toBeGreaterThanOrEqual(beforeCreate + 600);
+    expect(m.fundingDeadline).toBeLessThanOrEqual(afterCreate + 600);
     expect(m.settlementDeadline).toBe(received[0]!.settlementDeadline);
     expect(m.settlementDeadline).toBeGreaterThanOrEqual(beforeCreate + 3600);
     expect(m.settlementDeadline).toBeLessThanOrEqual(afterCreate + 3600);

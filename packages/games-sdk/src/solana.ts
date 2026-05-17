@@ -1,8 +1,8 @@
 // Real on-chain backend. Talks to the deployed Match program via Anchor.
 //
-// v0 coverage: game registry, match create/join/read, outcome post/finalize,
-// XP, and process-local replay storage. subscribeMatchStart is still an
-// off-chain event-delivery concern for chain networks.
+// v0 coverage: game registry, match create/join/read, chain-derived
+// MatchStart polling, outcome post/finalize, XP, and process-local replay
+// storage.
 
 import { createHash } from "node:crypto";
 // Use namespace imports — both packages publish browser ESM bundles with no
@@ -50,6 +50,8 @@ const { Connection, PublicKey, SystemProgram } = web3;
 const MATCH_PROGRAM_ID = new PublicKey("kPnK69DwUAmEobyLiWNNmra6STdJLFszJxc314XkEKb");
 const GAME_REGISTRY_PROGRAM_ID = new PublicKey("92NzjeGS2kEuLw53vAvox6eFdNfT2VoSTrSX4uGTHKbS");
 const XP_LEDGER_PROGRAM_ID = new PublicKey("E4ccwzzHoLeziC4S7so55etspU6Ag6zrGNERKhSuaD74");
+const MATCH_START_POLL_MS = 500;
+const DEFAULT_PLATFORM_API_BASE_URL = "https://api.x1-labs.dev";
 
 // ---------------------------------------------------------------------------
 
@@ -320,12 +322,40 @@ export class SolanaBackend {
     return { gameId: reg.id, attestorPubkey: reg.attestorPubkey };
   }
 
-  subscribeMatchStart(_gameId: GameId, _handler: MatchStartHandler): () => void {
-    // Solana backend v0 has no on-chain event push. Subscribe is a no-op so
-    // callers can construct backend-agnostic clients without conditionals.
-    // Use `platform.getMatch(matchId)` once you know a match has gone Live —
-    // games that need pub-sub today should use network: "stub" for now.
-    return () => {};
+  subscribeMatchStart(gameId: GameId, handler: MatchStartHandler): () => void {
+    const emitted = new Set<MatchId>();
+    let closed = false;
+    let polling = false;
+
+    const poll = async () => {
+      if (closed || polling) return;
+      polling = true;
+      try {
+        const matches = await this.listMatches({ gameId, limit: 500 });
+        if (closed) return;
+        for (const match of matches) {
+          if (match.state !== "Live" || emitted.has(match.matchId)) continue;
+          emitted.add(match.matchId);
+          handler(this.matchStartFromView(match));
+        }
+      } catch (err) {
+        // A subscription should survive transient RPC/indexer failures.
+        // Callers can still use getMatch/listMatches for explicit error paths.
+        console.warn(
+          `[x1-games-sdk] subscribeMatchStart poll failed for game "${gameId}":`,
+          err,
+        );
+      } finally {
+        polling = false;
+      }
+    };
+
+    void poll();
+    const timer = setInterval(() => void poll(), MATCH_START_POLL_MS);
+    return () => {
+      closed = true;
+      clearInterval(timer);
+    };
   }
 
   async createMatch(input: CreateMatchInput): Promise<{ matchId: MatchId; vaultAddress: Pubkey }> {
@@ -484,6 +514,33 @@ export class SolanaBackend {
     return this.matchAccountToView(matchId, m);
   }
 
+  private matchStartFromView(match: MatchView): MatchStart {
+    const outcomeEndpoint =
+      `${DEFAULT_PLATFORM_API_BASE_URL}/v0/games/${match.gameId}/matches/${match.matchId}/outcome`;
+    const replayUploadUrl =
+      match.model === "OPTIMISTIC"
+        ? `${DEFAULT_PLATFORM_API_BASE_URL}/v0/replays/${match.matchId}`
+        : null;
+
+    return MatchStart.parse({
+      protocolVersion: "v0",
+      matchId: match.matchId,
+      gameId: match.gameId,
+      seed: match.seed,
+      seats: match.seats,
+      stakePerSeat: match.stakePerSeat,
+      housePrize: match.housePrize === "0" ? null : match.housePrize,
+      rakeBps: match.rakeBps,
+      model: match.model,
+      players: match.players,
+      attestorPubkey: match.attestorPubkey,
+      fundingDeadline: match.fundingDeadline,
+      settlementDeadline: match.settlementDeadline,
+      outcomeEndpoint,
+      replayUploadUrl,
+    });
+  }
+
   async finalizeMatch(input: FinalizeMatchInput): Promise<{ state: MatchPhase }> {
     const matchPda = new PublicKey(input.matchId);
     const m = (await this.program.account.match.fetch(matchPda)) as MatchAccountRaw;
@@ -513,6 +570,7 @@ export class SolanaBackend {
 
   private async matchAccountToView(matchId: MatchId, m: MatchAccountRaw): Promise<MatchView> {
     const matchPda = new PublicKey(matchId);
+    const game = (await this.registry.account.game.fetch(m.gameId)) as GameAccountRaw;
     const phase = decodeMatchPhase(m.state);
     const players: Pubkey[] = m.players.map((p) => p.toBase58());
     const vaultPda = deriveVaultPda(matchPda);
@@ -536,7 +594,7 @@ export class SolanaBackend {
 
     return {
       matchId,
-      gameId: m.gameId.toBase58(),
+      gameId: game.id,
       state: phase,
       players,
       vaultLamports,
@@ -548,6 +606,7 @@ export class SolanaBackend {
       attestorPubkey: m.attestor.toBase58(),
       seed,
       challengeWindowSecs: m.challengeWindowSecs,
+      fundingDeadline: m.fundingDeadline.toNumber(),
       settlementDeadline: m.settlementDeadline.toNumber(),
       settledAt: m.settledAt.toNumber(),
       ...(outcome ? { outcome } : {}),

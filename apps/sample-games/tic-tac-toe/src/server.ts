@@ -91,9 +91,9 @@ export class TttGameServer {
     if (m.session.isTerminal() && !m.settled) await this.settle(matchId);
   }
 
-  /** Explicitly attach a match by id. Used when the backend does not push
-   *  MatchStart events (Solana backend v0). Fetches the live state and
-   *  creates a session. Idempotent. */
+  /** Explicitly attach a match by id. Useful for manual recovery or when a
+   *  game learns about a live match through an external watcher. Fetches the
+   *  live state and creates a session. Idempotent. */
   async attachMatch(matchId: string): Promise<void> {
     if (this.matches.has(matchId)) return;
     const view = await this.platform.getMatch(matchId);
@@ -112,12 +112,12 @@ export class TttGameServer {
       seed: view.seed,
       seats: view.seats,
       stakePerSeat: view.stakePerSeat,
-      housePrize: null,
+      housePrize: view.housePrize === "0" ? null : view.housePrize,
       rakeBps: view.rakeBps,
       model: view.model,
       players: view.players,
       attestorPubkey: view.attestorPubkey,
-      fundingDeadline: 0,
+      fundingDeadline: view.fundingDeadline,
       settlementDeadline: view.settlementDeadline,
       outcomeEndpoint: `local://attached/${matchId}/outcome`,
       replayUploadUrl: null,

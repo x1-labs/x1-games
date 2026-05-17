@@ -1,6 +1,6 @@
 # X1 Games
 
-Settlement layer for wagered play on the X1 blockchain. Built by **x1-labs**. See [`WHITEPAPER.md`](./WHITEPAPER.md) for design and [`INTEGRATION.md`](./INTEGRATION.md) for the contract game devs build against.
+Settlement layer for wagered play on the X1 blockchain. Built by **x1-labs**. See [`WHITEPAPER.md`](./docs/WHITEPAPER.md) for design and [`INTEGRATION.md`](./docs/INTEGRATION.md) for the contract game devs build against.
 
 ## Layout
 
@@ -15,10 +15,10 @@ x1-games/
 │   └── sample-games/
 │       └── tic-tac-toe/            # @x1-labs/sample-tic-tac-toe — reference integration
 ├── docs/
+│   ├── INTEGRATION.md              # the v0 game integration contract
+│   ├── WHITEPAPER.md               # design rationale
+│   ├── diagrams/                   # architecture & flow diagrams (SVG + PNG)
 │   └── platform-backlog.md         # platform services, decentralization split, and roadmap backlog
-├── diagrams/                       # architecture & flow diagrams (SVG + PNG)
-├── INTEGRATION.md                  # the v0 game integration contract
-├── WHITEPAPER.md                   # design rationale
 └── scripts/
     ├── test-all.sh                 # local mirror of CI
     ├── smoke-linux.sh              # CI loader smoke under linux+bun (docker)

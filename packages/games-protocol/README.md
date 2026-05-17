@@ -6,7 +6,7 @@ This package defines the wire-format primitives that game devs, the SDK, and the
 
 Most game devs don't depend on this package directly — install [`@x1-labs/games-sdk`](https://www.npmjs.com/package/@x1-labs/games-sdk) instead, which re-exports the public types from here.
 
-> **Status: v0, mutable.** This package targets the v0 integration contract. Breaking changes are expected during v0 development and get sub-version bumps. See [`INTEGRATION.md`](https://github.com/x1-labs/x1-games/blob/master/INTEGRATION.md) §10.
+> **Status: v0, mutable.** This package targets the v0 integration contract. Breaking changes are expected during v0 development and get sub-version bumps. See [`INTEGRATION.md`](https://github.com/x1-labs/x1-games/blob/master/docs/INTEGRATION.md) §10.
 
 ## Install
 
