@@ -415,7 +415,7 @@ Returns: { envelope: OutcomeEnvelope, chainSignature: string }
 
 ### 5.4 The stub network
 
-For local development, the SDK exposes `network: "stub"`. In stub mode all four payloads round-trip in-memory, signatures use a deterministic dev key, and replay storage is a filesystem path under `./.x1-stub/`. The same Zod schemas validate every payload, so a stub-passing integration passes contract validation when pointed at devnet.
+For local development, the SDK exposes `network: "stub"`. In stub mode all payloads round-trip in-memory. Outcome envelopes are signed with a real ed25519 keypair allocated in memory for that registered game, and replay storage uses the process-local in-memory replay store. The same Zod schemas validate every payload, so a stub-passing integration passes contract validation when pointed at localnet/testnet/mainnet.
 
 ---
 

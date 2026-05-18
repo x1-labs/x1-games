@@ -1,6 +1,6 @@
 {
   "name": "@x1-labs/games-sdk",
-  "version": "0.1.3",
+  "version": "0.1.4",
   "description": "Typed TypeScript SDK for building games on X1 Games — match lifecycle, settlement, replays, XP",
   "license": "MIT",
   "author": "X1 Labs Team",

@@ -80,7 +80,8 @@ describe("Tic-Tac-Toe — end-to-end on chain", () => {
     await playerA.joinMatch({ matchId });
     await playerB.joinMatch({ matchId });
 
-    // 4. Attach the match to the server (no on-chain event push in v0).
+    // 4. Attach explicitly to exercise the manual recovery path. The SDK also
+    // supports chain-derived subscribeMatchStart for the normal path.
     await server.attachMatch(matchId);
 
     // 5. Capture balances pre-settlement.

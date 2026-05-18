@@ -47,7 +47,7 @@ See `memory/reference_toolchain_versions.md` for the upstream-vs-X1 mainnet rati
 
 ## Test matrix
 
-5 suites, 112 tests total at last check.
+5 suites, 132 tests total at last check.
 
 | Suite | Cmd (from workspace dir) |
 |---|---|
@@ -65,7 +65,7 @@ Run them all locally:
 
 ## CI
 
-GitHub Actions runs the full matrix on every push and PR to `main` ([`.github/workflows/test.yml`](.github/workflows/test.yml)):
+GitHub Actions runs the full matrix on every push and PR to `master` and `main` ([`.github/workflows/test.yml`](.github/workflows/test.yml)):
 
 - **`offchain`** job — all four bun-tested workspaces. Fast (<1 min wall).
 - **`onchain`** job — installs Agave 3.1.14 + Anchor 1.0.2 + surfpool 1.0, then `anchor build && anchor test`. ~5–15 min depending on cache state.

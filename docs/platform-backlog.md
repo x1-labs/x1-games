@@ -20,9 +20,12 @@ The design goal is to keep authority decentralized where practical:
   wired through the SDK and Anchor programs.
 - `stub` is an in-memory testing backend with real ed25519 outcome signatures.
 - Replay storage is process-local and in-memory.
-- `subscribeMatchStart` is implemented by the stub only; chain backends need an
-  event delivery path.
+- `subscribeMatchStart` works in stub mode and on chain backends. Stub emits
+  in-memory; chain backends derive `MatchStart` by polling on-chain Live
+  matches. Hosted webhooks/indexing remain backlog work.
 - `MatchView.settlementDeadline` is exposed by the SDK as of `0.1.3`.
+- `MatchView.fundingDeadline` and chain-derived `subscribeMatchStart` are
+  exposed by the SDK as of `0.1.4`.
 
 ## Service Decentralization Split
 
@@ -578,6 +581,10 @@ Acceptance criteria:
 
 - SDK `0.1.3` exposes `MatchView.settlementDeadline` so game bindings no longer
   need an in-memory deadline map for matches created through the SDK.
+- SDK `0.1.4` exposes `MatchView.fundingDeadline` and chain-derived
+  `subscribeMatchStart` for localnet/testnet/mainnet. This keeps the
+  game-facing start-room pattern consistent across stub and chain backends while
+  hosted webhooks/indexing are still pending.
 - Durable reconnect across game-server restarts remains backlog work. The
   platform should expose durable match state and delivery cursors; each game
   still needs to persist game-specific room/session state.
