@@ -19,7 +19,7 @@ jobs:
   # -------------------------------------------------------------------------
   offchain:
     name: off-chain (bun)
-    runs-on: ubuntu-latest
+    runs-on: ubuntu-26.04
     timeout-minutes: 10
     steps:
       - uses: actions/checkout@v4
@@ -64,7 +64,7 @@ jobs:
   # -------------------------------------------------------------------------
   onchain:
     name: on-chain (anchor)
-    runs-on: ubuntu-latest
+    runs-on: ubuntu-26.04
     timeout-minutes: 45
     env:
       AGAVE_VERSION: 3.1.14
